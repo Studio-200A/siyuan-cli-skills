@@ -213,10 +213,24 @@ siyuan <command> \
 At the beginning of a session:
 
 ```bash
-command -v siyuan
-siyuan --version
-siyuan workspace list --format json
+SIYUAN_CLI="$(command -v siyuan || command -v SiYuan-Kernel || command -v SiYuan-Kernel.exe)"
+if [ -z "$SIYUAN_CLI" ]; then
+  printf 'SiYuan CLI not found in PATH. Ask the user for the install directory or full CLI path.\n' >&2
+  exit 1
+fi
+"$SIYUAN_CLI" --version
+"$SIYUAN_CLI" workspace list --format json
 ```
+
+The CLI binary is commonly named `siyuan`, but some platforms or installation methods may expose it as `SiYuan-Kernel` or `SiYuan-Kernel.exe`. If no CLI binary is found in `PATH`, do not guess. Ask the user for the SiYuan installation directory or the full CLI path, then use that discovered binary consistently for subsequent commands.
+
+The kernel CLI is commonly located under:
+
+```text
+<SiYuan install directory>/resources/kernel/SiYuan-Kernel
+```
+
+On Windows, the binary is commonly `SiYuan-Kernel.exe`; on Linux, it is commonly `SiYuan-Kernel` without an extension. On macOS, if the CLI is not in `PATH`, ask the user for the installed `SiYuan.app` path and inspect or use the kernel binary under the app bundle, commonly under `Contents/Resources/kernel/`.
 
 If the installed version differs from the tested version, or a command fails because of an unknown flag or changed syntax:
 
@@ -271,7 +285,7 @@ siyuan search "project plan" \
 
 Do not assume a stable JSON schema without observing it. Inspect a representative response before writing filters or parsing logic.
 
-When `jq` is available, it may be used after the response shape has been inspected:
+`jq` is a recommended external utility for reliable JSON inspection and filtering, but the SiYuan CLI itself can run without it. When `jq` is available, it may be used after the response shape has been inspected:
 
 ```bash
 result="$(siyuan notebook list \
@@ -1161,7 +1175,6 @@ This appendix is derived from the complete recursive `--help` output for SiYuan 
 ## `asset` commands
 
 - **`siyuan asset`** — Manage assets  
-- 
   Usage: `siyuan asset [command]`
 - **`siyuan asset clean`** — Clean unused assets  
   Usage: `siyuan asset clean [flags]`

@@ -8,7 +8,7 @@
 
 ## 2. 它来自官方 agent.go，是"化用"而非重造
 
-思源 3.7.0 内核内置了一个 AI agent（源码 `agent.go`），它定义了一套完整的范式：block 领域模型（容器块/叶子块）、heading 非容器的坑、`safeActions` 读写白名单、doom loop 死循环检测、一度自动快照、`[tool_output]` 不可信数据标记……但这些设计是**为内置 agent + GUI 弹窗确认**服务的。
+思源 3.7.0 内核内置了一个 AI agent（源码 [`agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go)），它定义了一套完整的范式：block 领域模型（容器块/叶子块）、heading 非容器的坑、`safeActions` 读写白名单、doom loop 死循环检测、一度自动快照、`[tool_output]` 不可信数据标记……但这些设计是**为内置 agent + GUI 弹窗确认**服务的。
 
 本文档将这整套范式**外部化**了：
 
@@ -60,7 +60,7 @@
 
 ### 必需依赖：思源 CLI
 
-这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。不同平台下二进制名称可能是 `siyuan` 或 `SiYuan-Kernel`，具体以你的安装方式为准。
+这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。不同平台和安装方式下，二进制名称可能是 `siyuan`、`SiYuan-Kernel` 或 `SiYuan-Kernel.exe`。
 
 可以用下面的命令检查：
 
@@ -68,7 +68,39 @@
 siyuan --version
 ```
 
-如果提示 `command not found`，请确认思源 3.7.0+ 已安装，并把思源内核 CLI 所在目录加入系统 `PATH`，或在使用时告诉 AI 实际的 CLI 路径和二进制名称。
+如果提示 `command not found`，也可以尝试：
+
+```bash
+SiYuan-Kernel --version
+```
+
+Windows 下可能是：
+
+```powershell
+SiYuan-Kernel.exe --version
+```
+
+思源内核 CLI 通常位于：
+
+```text
+思源安装目录/resources/kernel/SiYuan-Kernel
+```
+
+常见情况：
+
+| 平台 | 常见二进制位置或名称 |
+| --- | --- |
+| Linux | `思源安装目录/resources/kernel/SiYuan-Kernel` |
+| Windows | `思源安装目录/resources/kernel/SiYuan-Kernel.exe` |
+| macOS | 可能位于应用包内部，例如 `/Applications/SiYuan.app/Contents/Resources/kernel/SiYuan-Kernel`，以实际安装包为准 |
+
+如果 CLI 没有加入系统 `PATH`，可以在使用时把完整路径告诉 AI，例如：
+
+```text
+我的思源 CLI 路径是：/path/to/SiYuan/resources/kernel/SiYuan-Kernel
+```
+
+macOS 通过 `.dmg` 拖拽安装时，通常不会自动把应用包内部的二进制加入 `PATH`。如果终端无法直接运行 `siyuan` 或 `SiYuan-Kernel`，请把完整的 `SiYuan.app` 路径或内核 CLI 路径告诉 AI。
 
 ### 推荐依赖：`jq`
 
@@ -154,16 +186,29 @@ jq --version
 
 文档就是一个 Markdown 文件，用任何编辑器改都可以。改完保存，下次 AI 读到的就是你的定制版。
 
-## 7. 重要说明
+## 7. 跨平台使用说明
 
-### 平台差异
+`SIYUAN-CLI-SKILLS.md` 的命令示例默认采用 POSIX shell 语法，也就是 Linux/macOS 常见的 bash/zsh 写法。
 
-本文档的 Shell 示例基于 POSIX 系统（Linux/macOS + bash/zsh）。如果你在 **Windows + PowerShell** 下使用，需要让 AI 先修改文档再执行，比如对 AI 说：
+思源 CLI 本身可以在 Windows、macOS、Linux 上使用；需要注意的是，不同系统的 shell 语法不同。Windows + PowerShell 用户不建议直接复制文档中的 bash 示例执行，而是让 AI 在执行任务前先根据当前环境改写命令。
 
-> 请先阅读 SIYUAN-CLI-SKILLS.md，这份文档写的是 bash shell 的语法，请将里面的所有命令示例改为适配当前 Windows 环境下的 PowerShell 语法，然后再帮我执行下面的任务：……
+推荐提示词：
 
-主要差异是变量定义方式（`$SIYUAN_WORKSPACE` → `$env:SIYUAN_WORKSPACE`）、Heredoc 语法、临时文件路径等。交给 AI 改就行。
+> 请先阅读 `SIYUAN-CLI-SKILLS.md`。这份文档中的命令示例默认是 Linux/macOS bash 语法。我的环境是 Windows + PowerShell，请在执行任何命令前，将涉及的命令改写为 PowerShell 语法，包括变量、换行续写、管道、标准输入、临时文件、路径和错误处理。不要直接执行 bash 写法。
 
-### CLI 二进制名称
+常见需要改写的地方：
 
-可能是`siyuan` 或 `SiYuan-Kernel` ，名称因平台而异。如果 `siyuan` 报 "command not found"，试试 `SiYuan-Kernel`。AI 读到文档后会先执行 `command -v siyuan` 探测，如果找不到你提醒一句即可切换，或告诉AI CLI二进制具体位置及名称，并要求AI按实际情况修改skill文档。
+| POSIX bash/zsh | Windows PowerShell |
+| --- | --- |
+| `$SIYUAN_WORKSPACE` | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
+| `\` 换行续写 | 反引号 `` ` `` 换行续写 |
+| `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@` |
+| `mktemp` | `[System.IO.Path]::GetTempFileName()` |
+| `tail -n 200 file` | `Get-Content file -Tail 200` |
+| `rm -f file` | `Remove-Item -Force file` |
+| `$?` / `$status` | `$LASTEXITCODE` |
+| `/absolute/path/...` | `C:\...` 或 PowerShell 可识别路径 |
+
+如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 或 `SiYuan-Kernel` 是否在该 shell 的 `PATH` 中。
+
+CLI 二进制名称和 `jq` 安装方式见上面的“依赖”章节。如果 `siyuan --version` 失败，请先确认思源版本、CLI 二进制名称和 `PATH` 配置，再让 AI 继续操作。
