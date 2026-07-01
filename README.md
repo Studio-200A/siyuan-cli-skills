@@ -56,7 +56,94 @@
 
 这意味着 AI 不需要靠训练记忆猜测命令名或参数名——不确定时可以直接查表，或者用 `siyuan <command> --help` 获取最新的实时帮助。速查表 + 实时帮助双保险，彻底消除命令格式的幻觉风险。
 
-## 5. 按需定制
+## 5. 依赖
+
+### 必需依赖：思源 CLI
+
+这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。不同平台下二进制名称可能是 `siyuan` 或 `SiYuan-Kernel`，具体以你的安装方式为准。
+
+可以用下面的命令检查：
+
+```bash
+siyuan --version
+```
+
+如果提示 `command not found`，请确认思源 3.7.0+ 已安装，并把思源内核 CLI 所在目录加入系统 `PATH`，或在使用时告诉 AI 实际的 CLI 路径和二进制名称。
+
+### 推荐依赖：`jq`
+
+`jq` 是命令行 JSON 处理工具。思源 CLI 的 `--format json` 输出很多，AI agent 在提取 notebook ID、block ID、snapshot ID、数据库字段、搜索结果等信息时，用 `jq` 会比直接从整段 JSON 里人工判断更稳定。
+
+严格来说，`jq` 不是思源 CLI 的硬性依赖；但为了让这份 skill 更可靠，强烈建议安装。
+
+#### Windows
+
+如果你使用 WinGet：
+
+```powershell
+winget install jqlang.jq
+```
+
+如果你使用 Chocolatey：
+
+```powershell
+choco install jq
+```
+
+如果你使用 Scoop：
+
+```powershell
+scoop install jq
+```
+
+安装后重新打开终端，检查：
+
+```powershell
+jq --version
+```
+
+#### macOS
+
+如果你使用 Homebrew：
+
+```bash
+brew install jq
+```
+
+检查：
+
+```bash
+jq --version
+```
+
+#### Linux
+
+Debian / Ubuntu：
+
+```bash
+sudo apt update
+sudo apt install jq
+```
+
+Fedora：
+
+```bash
+sudo dnf install jq
+```
+
+Arch Linux：
+
+```bash
+sudo pacman -S jq
+```
+
+检查：
+
+```bash
+jq --version
+```
+
+## 6. 按需定制
 
 文档的全部内容你都可以自由修改，适配自己的使用习惯。常见定制场景：
 
@@ -67,7 +154,7 @@
 
 文档就是一个 Markdown 文件，用任何编辑器改都可以。改完保存，下次 AI 读到的就是你的定制版。
 
-## 6. 重要说明
+## 7. 重要说明
 
 ### 平台差异
 
