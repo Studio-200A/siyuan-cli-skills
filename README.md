@@ -60,7 +60,23 @@
 
 ### 必需依赖：思源 CLI
 
-这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。不同平台和安装方式下，二进制名称可能是 `siyuan`、`SiYuan-Kernel` 或 `SiYuan-Kernel.exe`。
+这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。官方 CLI 说明见[Command-line Interface一节](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface)
+
+根据官方说明，CLI 二进制是：
+
+```text
+<install>/resources/kernel/SiYuan-Kernel
+```
+
+Windows installer 会自动把它加入 `PATH`。macOS/Linux 需要手动创建 `siyuan` symlink：
+
+```bash
+# macOS
+ln -s /Applications/SiYuan.app/Contents/Resources/kernel/SiYuan-Kernel /usr/local/bin/siyuan
+
+# Linux
+ln -s /path/to/SiYuan/resources/kernel/SiYuan-Kernel /usr/local/bin/siyuan
+```
 
 可以用下面的命令检查：
 
@@ -68,39 +84,11 @@
 siyuan --version
 ```
 
-如果提示 `command not found`，也可以尝试：
-
-```bash
-SiYuan-Kernel --version
-```
-
-Windows 下可能是：
-
-```powershell
-SiYuan-Kernel.exe --version
-```
-
-思源内核 CLI 通常位于：
-
-```text
-思源安装目录/resources/kernel/SiYuan-Kernel
-```
-
-常见情况：
-
-| 平台 | 常见二进制位置或名称 |
-| --- | --- |
-| Linux | `思源安装目录/resources/kernel/SiYuan-Kernel` |
-| Windows | `思源安装目录/resources/kernel/SiYuan-Kernel.exe` |
-| macOS | 可能位于应用包内部，例如 `/Applications/SiYuan.app/Contents/Resources/kernel/SiYuan-Kernel`，以实际安装包为准 |
-
-如果 CLI 没有加入系统 `PATH`，可以在使用时把完整路径告诉 AI，例如：
+如果提示 `command not found`，请先确认思源 3.7.0+ 已安装，并按照官方说明创建 symlink 或配置 `PATH`。如果不想配置 `PATH`，也可以在使用时把完整路径告诉 AI，例如：
 
 ```text
 我的思源 CLI 路径是：/path/to/SiYuan/resources/kernel/SiYuan-Kernel
 ```
-
-macOS 通过 `.dmg` 拖拽安装时，通常不会自动把应用包内部的二进制加入 `PATH`。如果终端无法直接运行 `siyuan` 或 `SiYuan-Kernel`，请把完整的 `SiYuan.app` 路径或内核 CLI 路径告诉 AI。
 
 ### 推荐依赖：`jq`
 
@@ -188,7 +176,7 @@ jq --version
 
 ## 7. 跨平台使用说明
 
-`SIYUAN-CLI-SKILLS.md` 的命令示例默认采用 POSIX shell 语法，也就是 Linux/macOS 常见的 bash/zsh 写法。
+`SIYUAN-CLI-SKILLS.md` 的命令示例默认采用 POSIX shell 语法，也就是 Linux/macOS 常见的 bash/zsh 写法。换句话说，**思源 CLI 本身是跨平台的，但这份 skill 文档里的 shell 示例是 POSIX-first，不是完整的跨平台命令示例集**。
 
 思源 CLI 本身可以在 Windows、macOS、Linux 上使用；需要注意的是，不同系统的 shell 语法不同。Windows + PowerShell 用户不建议直接复制文档中的 bash 示例执行，而是让 AI 在执行任务前先根据当前环境改写命令。
 
@@ -198,17 +186,17 @@ jq --version
 
 常见需要改写的地方：
 
-| POSIX bash/zsh | Windows PowerShell |
-| --- | --- |
-| `$SIYUAN_WORKSPACE` | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
-| `\` 换行续写 | 反引号 `` ` `` 换行续写 |
-| `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@` |
-| `mktemp` | `[System.IO.Path]::GetTempFileName()` |
-| `tail -n 200 file` | `Get-Content file -Tail 200` |
-| `rm -f file` | `Remove-Item -Force file` |
-| `$?` / `$status` | `$LASTEXITCODE` |
-| `/absolute/path/...` | `C:\...` 或 PowerShell 可识别路径 |
+| POSIX bash/zsh        | Windows PowerShell                            |
+| --------------------- | --------------------------------------------- |
+| `$SIYUAN_WORKSPACE`   | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
+| `\` 换行续写              | 反引号 `` ` `` 换行续写                              |
+| `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@`            |
+| `mktemp`              | `[System.IO.Path]::GetTempFileName()`         |
+| `tail -n 200 file`    | `Get-Content file -Tail 200`                  |
+| `rm -f file`          | `Remove-Item -Force file`                     |
+| `$?` / `$status`      | `$LASTEXITCODE`                               |
+| `/absolute/path/...`  | `C:\...` 或 PowerShell 可识别路径                   |
 
-如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 或 `SiYuan-Kernel` 是否在该 shell 的 `PATH` 中。
+如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 是否在该 shell 的 `PATH` 中。
 
 CLI 二进制名称和 `jq` 安装方式见上面的“依赖”章节。如果 `siyuan --version` 失败，请先确认思源版本、CLI 二进制名称和 `PATH` 配置，再让 AI 继续操作。

@@ -128,13 +128,13 @@ A daily note is a special document created at the notebook's configured daily-no
 
 - Read-only discovery and inspection commands may normally run without additional confirmation.
 - For any mutation (create, update, rename, move, delete, etc.), the agent must:
-  1. Complete all discovery to identify exact targets and verify their current state.
-  2. Present a numbered list of planned operations to the user, including the command, target ID, and expected outcome for each step.
-  3. Include safety snapshot creation as the first planned execution step, so the user knows a rollback safety net will be created before other mutations.
-  4. Wait for explicit user confirmation before executing. Clear confirmations may be in Chinese or English, such as "确认", "confirm", "execute", or "go ahead". Clear cancellations such as "放弃", "取消", "cancel", or "abort" cancel the planned mutations. Do not treat vague, unrelated, or silent responses as confirmation.
-  5. After confirmation, create the safety snapshot first and record its snapshot ID.
-  6. Execute the remaining planned mutations only after snapshot creation succeeds, unless the user explicitly approves proceeding without a snapshot.
-  7. After execution, verify each mutation with a read command.
+   1. Complete all discovery to identify exact targets and verify their current state.
+   2. Present a numbered list of planned operations to the user, including the command, target ID, and expected outcome for each step.
+   3. Include safety snapshot creation as the first planned execution step, so the user knows a rollback safety net will be created before other mutations.
+   4. Wait for explicit user confirmation before executing. Clear confirmations may be in Chinese or English, such as "确认", "confirm", "execute", or "go ahead". Clear cancellations such as "放弃", "取消", "cancel", or "abort" cancel the planned mutations. Do not treat vague, unrelated, or silent responses as confirmation.
+   5. After confirmation, create the safety snapshot first and record its snapshot ID.
+   6. Execute the remaining planned mutations only after snapshot creation succeeds, unless the user explicitly approves proceeding without a snapshot.
+   7. After execution, verify each mutation with a read command.
 - If the target, scope, destination, or direction is materially ambiguous, resolve that ambiguity before presenting the plan.
 - Destructive, broad, remote, rollback, or security-sensitive operations must be clearly flagged in the plan and require explicit approval.
 - External agents must not assume that SiYuan's built-in confirmation UI will protect CLI calls. The external agent is responsible for enforcing this policy.
@@ -210,10 +210,12 @@ siyuan <command> \
 
 ## Compatibility and command discovery
 
+Shell examples in this skill are POSIX-oriented and assume bash/zsh-style syntax. The SiYuan CLI is cross-platform, but non-POSIX shells such as Windows PowerShell must adapt variables, quoting, stdin, paths, and line continuation before executing examples.
+
 At the beginning of a session:
 
 ```bash
-SIYUAN_CLI="$(command -v siyuan || command -v SiYuan-Kernel || command -v SiYuan-Kernel.exe)"
+SIYUAN_CLI="$(command -v siyuan || command -v SiYuan-Kernel)"
 if [ -z "$SIYUAN_CLI" ]; then
   printf 'SiYuan CLI not found in PATH. Ask the user for the install directory or full CLI path.\n' >&2
   exit 1
@@ -222,15 +224,15 @@ fi
 "$SIYUAN_CLI" workspace list --format json
 ```
 
-The CLI binary is commonly named `siyuan`, but some platforms or installation methods may expose it as `SiYuan-Kernel` or `SiYuan-Kernel.exe`. If no CLI binary is found in `PATH`, do not guess. Ask the user for the SiYuan installation directory or the full CLI path, then use that discovered binary consistently for subsequent commands.
+The recommended command name in this POSIX-oriented skill is `siyuan`. If `siyuan` is unavailable, try a discovered `SiYuan-Kernel` binary or ask the user for the full CLI path. If no CLI binary is found in `PATH`, do not guess. Ask the user for the SiYuan installation directory or the full CLI path, then use that discovered binary consistently for subsequent commands.
 
-The kernel CLI is commonly located under:
+According to the official SiYuan CLI documentation, the kernel CLI binary is located under:
 
 ```text
 <SiYuan install directory>/resources/kernel/SiYuan-Kernel
 ```
 
-On Windows, the binary is commonly `SiYuan-Kernel.exe`; on Linux, it is commonly `SiYuan-Kernel` without an extension. On macOS, if the CLI is not in `PATH`, ask the user for the installed `SiYuan.app` path and inspect or use the kernel binary under the app bundle, commonly under `Contents/Resources/kernel/`.
+On macOS and Linux, users may need to create a `siyuan` symlink manually. Windows PowerShell usage is covered at the project README level and requires adapting the shell examples before execution.
 
 If the installed version differs from the tested version, or a command fails because of an unknown flag or changed syntax:
 
