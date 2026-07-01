@@ -73,4 +73,4 @@
 
 ### CLI 二进制名称
 
-`siyuan` 和 `SiYuan-Kernel` 是同一个程序，平台不同名称不同。如果 `siyuan` 报 "command not found"，试试 `SiYuan-Kernel`。AI 读到文档后会先执行 `command -v siyuan` 探测，如果找不到你提醒一句即可切换。
+可能是`siyuan` 或 `SiYuan-Kernel` ，名称因平台而异。如果 `siyuan` 报 "command not found"，试试 `SiYuan-Kernel`。AI 读到文档后会先执行 `command -v siyuan` 探测，如果找不到你提醒一句即可切换，或告诉AI CLI二进制具体位置及名称，并要求AI按实际情况修改skill文档。
