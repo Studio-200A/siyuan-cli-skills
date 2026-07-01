@@ -1,5 +1,7 @@
 # SIYUAN-CLI-SKILLS — 思源笔记 AI Agent 操作指南
 
+![Overview Screenshot](assets/ability-showcase-screenshot.png)
+
 ## 1. 它是什么，干什么用
 
 **SIYUAN-CLI-SKILLS.md** 是一份 AI Agent 的思源 CLI 操作说明书。把它丢给任何一个支持读取文件的 AI 助手（Claude Code、Cursor、CodeBuddy 等），这个 AI 就能通过 `siyuan` 命令行工具帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**你的思源笔记工作空间。
