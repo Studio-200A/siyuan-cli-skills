@@ -19,7 +19,7 @@ The operational model in this document also adapts useful domain knowledge and s
 
 Read this file first for mandatory rules, safety boundaries, and the standard operating procedure. Do not read all auxiliary files by default.
 
-Consult `SIYUAN-CLI-WORKFLOWS.md` when a task matches a specific workflow, requires examples, or needs task-specific conventions for content input, debugging, SQL, sync, serve, exports, assets, references, or database operations.
+Consult `SIYUAN-CLI-WORKFLOWS.md` when a task matches a specific workflow, requires examples, or needs task-specific conventions for content input, debugging, SQL, sync, serve, exports, assets, references, or database operations. Also consult it before using SiYuan-specific formatting or presentation features such as text color, background color, font size, title images, complex Markdown insertion, or placing content visually under headings.
 
 Consult `SIYUAN-CLI-COMMANDS.md` or live `siyuan <command> --help` before using unfamiliar commands, flags, or argument shapes. Live help and observed output remain authoritative.
 
