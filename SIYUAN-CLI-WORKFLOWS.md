@@ -153,7 +153,7 @@ Treat the fixed IDs as known defaults, not permission to skip verification: loca
 When the user reports a SiYuan error, crash, failed operation, or unexpected kernel behavior:
 
 1. Resolve the workspace.
-2. Read the last approximately 200 lines of `temp/siyuan.log` before guessing at a fix.
+2. Read the last approximately 200 lines of `temp/siyuan.log` (general log) and `temp/siyuan-cli.log` (cli log) before guessing at a fix.
 3. Summarize the relevant errors, timestamps, and affected subsystem.
 4. Correlate them with the failed CLI command or user action.
 5. Only then propose or execute a repair.
@@ -164,6 +164,12 @@ When direct filesystem access is available:
 tail -n 200 "$SIYUAN_WORKSPACE/temp/siyuan.log"
 ```
 
+and/or:
+
+```bash
+tail -n 200 "$SIYUAN_WORKSPACE/temp/siyuan-cli.log"
+```
+
 When only the CLI should be used for reading, note that `siyuan file read` in 3.7.0 has no offset or limit flags. Avoid dumping the full log into the final response; capture it, inspect the tail locally, and summarize only relevant lines:
 
 ```bash
@@ -171,6 +177,14 @@ log_output="$(siyuan file read "temp/siyuan.log" \
   --workspace "$SIYUAN_WORKSPACE")"
 
 printf '%s\n' "$log_output" | tail -n 200
+```
+
+and/or:
+
+```bash
+cli_log_output="$(siyuan file read "temp/siyuan-cli.log" \
+  --workspace "$SIYUAN_WORKSPACE")"
+printf '%s\n' "$cli_log_output" | tail -n 200
 ```
 
 Do not paste the full log by default. Redact secrets and unrelated private content. The `file` command family is appropriate for logs and explicit workspace-file tasks, but not as a back door for editing structured SiYuan data.

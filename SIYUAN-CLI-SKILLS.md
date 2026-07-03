@@ -445,6 +445,7 @@ Require explicit user authorization for the exact action and scope. Present the 
 - Cloud sync pull or push
 - Any broad batch change
 - Any write-capable or non-`SELECT` SQL statement
+  - NOTE: Non-read-only SQL is unsupported by the SiYuan CLI and must not be attempted. Use dedicated domain commands for mutations.
 - Starting `siyuan serve`, especially outside a trusted local environment
 
 Prefer a narrow operation over a broad one. For example, use `asset clean --path <one-path>` only after confirming the asset is unused, rather than cleaning every unused asset at once.
@@ -486,7 +487,7 @@ When a command fails:
 10. Do not fall back to direct `.sy` file editing or file writes against structured SiYuan data.
 11. If a partial mutation may have occurred, read the target state before deciding on recovery.
 12. Use history or snapshot recovery only after the user approves the exact rollback.
-13. For SiYuan/kernel errors, inspect the last approximately 200 lines of `temp/siyuan.log` before proposing a repair.
+13. For SiYuan/kernel errors, inspect the last approximately 200 lines of `temp/siyuan.log` (general log) and `temp/siyuan-cli.log` (cli log) before proposing a repair.
 
 ## Agent reporting format
 
