@@ -4,9 +4,13 @@ This auxiliary file contains task-specific workflows and examples for `SIYUAN-CL
 
 Consult this file only when a task needs a matching workflow, concrete command pattern, content-input pattern, debugging procedure, SQL guidance, sync/serve handling, or response/content convention.
 
+Command examples in this file illustrate workflow shape and safety sequencing. They are not authoritative syntax references. Before executing a command for the first time in the current session, and whenever syntax, flags, input mode, path semantics, or scope matter, check live `siyuan <command> --help` for the exact installed CLI behavior. Do not transfer input flags such as `--file` or `--markdown` between command families unless live help documents them for the exact command.
+
+Mutation examples in this file do not repeat the full safety sequence every time. The main skill's confirmation and snapshot rules still apply: after user confirmation, include the automatic `repo create` snapshot as the first execution step unless the user explicitly opts out.
+
 ## Content input and shell safety
 
-For multiline Markdown, generated text, or content containing quotes, prefer `--file -` with standard input instead of `--data`.
+For multiline Markdown, generated text, or content containing quotes, prefer `--file -` with standard input instead of `--data` only for commands whose live help documents `--file`.
 
 ```bash
 cat <<'EOF' | siyuan block append \
@@ -245,7 +249,7 @@ siyuan notebook list \
   --format json
 ```
 
-Present the plan and obtain user confirmation, then execute:
+Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 siyuan document create \
@@ -259,7 +263,7 @@ siyuan document create \
 
 After execution, capture the returned document ID and verify it with `document get` and `block kramdown`.
 
-For substantial content, create the document first, then append or update content through a block command using `--file -` or a temporary Markdown file.
+Do not pipe multiline content into `document create --file -` unless live help explicitly documents `--file` for `document create`. In the tested CLI, `document create` uses `--markdown` for initial content. For substantial content, create the document first, then append or update content through a block command using `--file -` or a temporary Markdown file where supported.
 
 ### 4. Safely update a block
 
@@ -281,7 +285,7 @@ siyuan repo create \
   --format json
 ```
 
-Then execute the confirmed block update:
+After the snapshot succeeds, execute the confirmed block update:
 
 ```bash
 siyuan block update \
@@ -316,7 +320,7 @@ siyuan block children \
   --format json
 ```
 
-Determine the last sibling in that heading's section, present the plan, obtain user confirmation, then execute:
+Determine the last sibling in that heading's section, present the plan, and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 cat <<'EOF' | siyuan block insert \
@@ -333,7 +337,9 @@ After execution, read the parent's children again to verify ordering. If the hea
 
 ### 5. Append to today's daily note
 
-For any diary, journal, daily log, or today's-note request, use this command family rather than `document create`.
+For any diary, journal, daily log, or today's-note request, use this command family rather than `document create`. For appending or prepending content, present the plan and obtain user confirmation; after creating the automatic snapshot required by the main skill, execute the write commands shown below.
+
+`dailynote create` is a get-or-create operation for today's daily note; use the returned document/block ID for subsequent append or prepend operations.
 
 ```bash
 siyuan dailynote create \
@@ -365,7 +371,7 @@ siyuan attr get \
   --format json
 ```
 
-Present the plan and obtain user confirmation, then execute:
+Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 siyuan attr set \
@@ -410,7 +416,7 @@ siyuan database render \
   --format json
 ```
 
-Before updating a cell, discover the exact attribute-view ID, key ID, item ID, and required JSON value shape. Do not infer the value schema from the field name alone. Present the plan and obtain user confirmation, then execute:
+Before updating a cell, discover the exact attribute-view ID, key ID, item ID, and required JSON value shape. Do not infer the value schema from the field name alone. Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 siyuan database item update \
@@ -455,7 +461,7 @@ Other supported export targets include HTML, preview HTML, DOCX, Markdown ZIP, `
 
 ### 9. Import Markdown
 
-Inspect the destination notebook and path first, then present the plan with the source path, target notebook, and destination hpath. Obtain explicit user confirmation before executing:
+Inspect the destination notebook and path first, then present the plan with the source path, target notebook, and destination hpath. Obtain explicit user confirmation; after creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 siyuan import md \
@@ -484,7 +490,7 @@ siyuan ref mentions \
   --format json
 ```
 
-Use `ref refresh` only when the user asks to refresh references or when a verified workflow requires it; it is a mutation-like maintenance action.
+Use `ref refresh` only when the user asks to refresh references or when a verified workflow requires it. It requires clear user intent, but it does not require an automatic snapshot.
 
 ### 11. Inspect history and recover content
 
@@ -550,7 +556,7 @@ siyuan asset stat \
   --format json
 ```
 
-Only after confirming a specific asset is unused, present the plan and obtain explicit user confirmation, then execute:
+Only after confirming a specific asset is unused, present the plan and obtain explicit user confirmation. After creating the automatic snapshot required by the main skill, execute:
 
 ```bash
 siyuan asset clean \
@@ -614,7 +620,7 @@ siyuan sync status \
   --format json
 ```
 
-Treat pull and push as high impact because they interact with remote state. Present the plan and obtain explicit user confirmation before executing:
+Treat pull and push as high impact because they interact with remote state. Present the plan, include the automatic safety snapshot as the first execution step after confirmation unless the user explicitly opts out, and obtain explicit user confirmation before executing:
 
 ```bash
 siyuan sync pull --workspace "$SIYUAN_WORKSPACE" --format json
