@@ -1,0 +1,227 @@
+中文 | [English](README.md)
+
+# SIYUAN-CLI-SKILLS — 思源笔记 AI Agent 操作指南
+
+![Overview Screenshot](assets/screenshot_cn.png)
+
+## 1. 它是什么，干什么用
+
+**SIYUAN-CLI-SKILLS.md** 是一份 AI Agent 的思源 CLI 操作说明书。把它和配套辅助文档放在任何一个支持读取文件的 AI 助手（Claude Code、Cursor、CodeBuddy 等）能访问到的目录里，这个 AI 就能通过 `siyuan` 命令行工具帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**你的思源笔记工作空间。
+
+简单说：它是思源笔记和外部 AI 之间的翻译官，让 AI 知道怎么安全地操作你的笔记。
+
+## 2. 它来自官方 agent.go，是"化用"而非重造
+
+思源 3.7.0 内核内置了一个 AI agent（源码 [`agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go)），它定义了一套完整的范式：block 领域模型（容器块/叶子块）、heading 非容器的坑、`safeActions` 读写白名单、doom loop 死循环检测、一度自动快照、`[tool_output]` 不可信数据标记……但这些设计是**为内置 agent + GUI 弹窗确认**服务的。
+
+本文档将这整套范式**外部化**了：
+
+- agent.go 通过 UI 弹窗让用户确认每个写操作 → 本文档改为列出操作计划、等用户文本确认
+- agent.go 有 `safeActions` 白名单自动放行只读操作 → 本文档划出 Safety Level 1/2/3 三级分类
+- agent.go 用 `snapshotCreated` 标记确保一次会话只打一次快照 → 本文档将快照纳入操作计划、确认后执行
+- agent.go 用 `doomLoopTracker` 检测签名重复终止循环 → 本文档规定同命令失败 3 次后换方法，5 次后终止该方法
+
+**它不是直接翻译 agent.go，而是保留其安全哲学和操作边界，把每个机制落地为 CLI 场景下可执行的等价方案。**
+
+## 3. 安全性设计梳理
+
+因为 `siyuan` CLI 直接操作内核数据、无 UI 确认弹窗、无撤销功能，外部 agent 的危险程度远高于内置 agent。文档用四层机制兜底：
+
+**第一层：快照兜底。** 用户确认操作计划后，第一执行步是打数据快照，改坏了可以 `repo checkout` 回滚。快照 ID 明确告知用户。
+
+**第二层：用户确认。** 发现阶段收集完所有信息后，列出完整操作清单（每个命令、目标 ID、预期结果），等用户说"确认"才动手。不搞静默写入。
+
+**第三层：逐个验证。** 每执行一步，立即用读命令回读确认结果，不依赖"零退出码=成功"。
+
+**第四层：失败熔断。** 同一命令连续失败 3 次自动换方法，5 次终止，不会卡死循环。
+
+**额外防线：** 规则写死"永不编造 ID、路径、block 类型"，所有标识符必须从实际工作空间发现，消除 AI 幻觉风险；所有思源返回内容视作不可信数据，防止 prompt 注入。
+
+## 4. 如何使用
+
+不同 AI 软件的具体使用方式各有差异，但核心操作都一样简单：
+
+> **让 AI 读取这份文档即可。**
+
+把这几个文件放在 AI 能访问到的同一目录里：
+
+| 文件                        | 作用                                         |
+| ------------------------- | ------------------------------------------ |
+| `SIYUAN-CLI-SKILLS.md`    | 主入口：强制规则、安全边界、领域模型、SOP、错误处理、报告格式           |
+| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：常见工作流、内容输入、调试、SQL、同步、导入导出、资产、数据库等场景细节 |
+
+然后在对话中说："请先阅读 `SIYUAN-CLI-SKILLS.md`，然后帮我搜索/创建/管理思源笔记。需要具体工作流时，再按主文档指引查阅 `SIYUAN-CLI-WORKFLOWS.md`。具体命令参数以实时 `siyuan <command> --help` 为准。"
+
+第一次使用时可以这样引导：
+
+```
+请阅读 /path/to/SIYUAN-CLI-SKILLS.md，然后检查我电脑上的 siyuan CLI
+版本，列出已注册的工作空间，给我做一个总体介绍。需要具体工作流或
+场景示例时，再查阅同目录下的 SIYUAN-CLI-WORKFLOWS.md。
+具体命令参数请执行实时 siyuan <command> --help 确认。
+```
+
+主文档本身就是自解释的——AI 读完就知道有哪些安全规则必须遵守、如何组织多步骤操作，以及什么时候需要查阅辅助文件。
+
+### 实时 CLI 帮助优先
+
+这份 skill 在重要位置均有提示：**具体命令名、参数、flag、输入方式和路径语义，以当前安装版本的实时帮助为准**：
+
+```bash
+siyuan <command> --help
+```
+
+此举可明确指导AI Agent优先获取当前版本最准确的命令使用范式，并减少 AI 从相似命令中误推参数的风险。`siyuan-cli-help-export.sh` 作为可选维护/审计工具保留，用来批量导出当前 CLI 的完整帮助信息供人工检查或临时参考。
+
+## 5. 依赖
+
+### 必需依赖：思源 CLI
+
+这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。官方 CLI 说明见[Command-line Interface一节](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface)
+
+根据官方说明，CLI 二进制是：
+
+```text
+<install>/resources/kernel/SiYuan-Kernel
+```
+
+Windows installer 会自动把它加入 `PATH`。macOS/Linux 需要手动创建 `siyuan` symlink：
+
+```bash
+# macOS
+ln -s /Applications/SiYuan.app/Contents/Resources/kernel/SiYuan-Kernel /usr/local/bin/siyuan
+
+# Linux
+ln -s /path/to/SiYuan/resources/kernel/SiYuan-Kernel /usr/local/bin/siyuan
+```
+
+可以用下面的命令检查：
+
+```bash
+siyuan --version
+```
+
+如果提示 `command not found`，请先确认思源 3.7.0+ 已安装，并按照官方说明创建 symlink 或配置 `PATH`。如果不想配置 `PATH`，也可以在使用时把完整路径告诉 AI，例如：
+
+```text
+我的思源 CLI 路径是：/path/to/SiYuan/resources/kernel/SiYuan-Kernel
+```
+
+### 推荐依赖：`jq`
+
+`jq` 是命令行 JSON 处理工具。思源 CLI 的 `--format json` 输出很多，AI agent 在提取 notebook ID、block ID、snapshot ID、数据库字段、搜索结果等信息时，用 `jq` 会比直接从整段 JSON 里人工判断更稳定。
+
+严格来说，`jq` 不是思源 CLI 的硬性依赖；但为了让这份 skill 更可靠，强烈建议安装。
+
+#### Windows
+
+如果你使用 WinGet：
+
+```powershell
+winget install jqlang.jq
+```
+
+如果你使用 Chocolatey：
+
+```powershell
+choco install jq
+```
+
+如果你使用 Scoop：
+
+```powershell
+scoop install jq
+```
+
+安装后重新打开终端，检查：
+
+```powershell
+jq --version
+```
+
+#### macOS
+
+如果你使用 Homebrew：
+
+```bash
+brew install jq
+```
+
+检查：
+
+```bash
+jq --version
+```
+
+#### Linux
+
+Debian / Ubuntu：
+
+```bash
+sudo apt update
+sudo apt install jq
+```
+
+Fedora：
+
+```bash
+sudo dnf install jq
+```
+
+Arch Linux：
+
+```bash
+sudo pacman -S jq
+```
+
+检查：
+
+```bash
+jq --version
+```
+
+## 6. 按需定制
+
+文档的全部内容你都可以自由修改，适配自己的使用习惯。常见定制场景：
+
+- **不想每次等确认**：删掉 SOP 第 11 步（展示计划等待确认）及规则 11 中的相关要求，AI 会在发现完后直接执行。
+- **不想要快照**：删掉规则 10 和 SOP 第 12 步，AI 会跳过快照直接操作。
+- **只想让 AI 读不能写**：删掉 Safety Level 2 和 Level 3 全部命令，AI 就只会做查询。
+- **添加自定义工作流**：在 `SIYUAN-CLI-WORKFLOWS.md` 的 Common workflows 章节追加你自己的固定操作模式。
+
+文档都是 Markdown 文件，用任何编辑器改都可以。改完保存，下次 AI 读到的就是你的定制版。
+
+## 7. 跨平台使用说明
+
+`SIYUAN-CLI-SKILLS.md` 的命令示例默认采用 POSIX shell 语法，也就是 Linux/macOS 常见的 bash/zsh 写法。换句话说，**思源 CLI 本身是跨平台的，但这份 skill 文档里的 shell 示例是 POSIX-first，不是完整的跨平台命令示例集**。
+
+思源 CLI 本身可以在 Windows、macOS、Linux 上使用；需要注意的是，不同系统的 shell 语法不同。Windows + PowerShell 用户不建议直接复制文档中的 bash 示例执行，而是让 AI 在执行任务前先根据当前环境改写命令。
+
+推荐提示词：
+
+> 请先阅读 `SIYUAN-CLI-SKILLS.md`。这份文档中的命令示例默认是 Linux/macOS bash 语法。我的环境是 Windows + PowerShell，请在执行任何命令前，将涉及的命令改写为 PowerShell 语法，包括变量、换行续写、管道、标准输入、临时文件、路径和错误处理。不要直接执行 bash 写法。
+
+常见需要改写的地方：
+
+| POSIX bash/zsh        | Windows PowerShell                            |
+| --------------------- | --------------------------------------------- |
+| `$SIYUAN_WORKSPACE`   | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
+| `\` 换行续写              | 反引号 `` ` `` 换行续写                              |
+| `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@`            |
+| `mktemp`              | `[System.IO.Path]::GetTempFileName()`         |
+| `tail -n 200 file`    | `Get-Content file -Tail 200`                  |
+| `rm -f file`          | `Remove-Item -Force file`                     |
+| `$?` / `$status`      | `$LASTEXITCODE`                               |
+| `/absolute/path/...`  | `C:\...` 或 PowerShell 可识别路径                   |
+
+如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 是否在该 shell 的 `PATH` 中。
+
+CLI 二进制名称和 `jq` 安装方式见上面的“依赖”章节。如果 `siyuan --version` 失败，请先确认思源版本、CLI 二进制名称和 `PATH` 配置，再让 AI 继续操作。
+
+## 8. 免责声明
+
+本文档按 **AS IS（原样）** 提供，不附带任何形式的保证。使用风险由你自行承担；在允许 AI 修改思源工作空间前，请仔细审阅所有 AI 生成的操作计划。
+
+## 9. License
+
+本项目基于 [MIT License](LICENSE) 授权。
