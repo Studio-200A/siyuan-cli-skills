@@ -10,6 +10,8 @@ Mutation examples in this file do not repeat the full safety sequence every time
 
 ## Content input and shell safety
 
+Do not write model reasoning traces, hidden chain-of-thought, planning notes, or provider-specific thinking tags such as `<think>...</think>` into SiYuan content or generated titles unless the user explicitly asks for them.
+
 For multiline Markdown, generated text, or content containing quotes, prefer `--file -` with standard input instead of `--data` only for commands whose live help documents `--file`.
 
 ```bash
