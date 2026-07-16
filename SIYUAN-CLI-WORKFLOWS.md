@@ -67,6 +67,7 @@ Translate user intent into CLI commands using these patterns:
 | Move one content block         | `block move`                                                                                           |
 | Work with block attributes     | `attr get` / `attr set`                                                                                |
 | Work with database rows/fields | `database item ...`, `database key ...`, `database render`                                             |
+| Process cloud inbox items      | `inbox list` → `inbox get` → `inbox convert`                                                           |
 | Change a document-block icon   | `attr set --attr icon=...`                                                                             |
 | Change a notebook icon         | `notebook set-icon` or narrowly scoped `notebook random-icon --id ...`                                 |
 
@@ -113,6 +114,30 @@ To combine style with bold or italic marks:
 ```
 
 Never emit a bare `<span style="...">` for SiYuan content; without `data-type`, it may be escaped and displayed literally. Prefer ordinary Markdown when color, background, or size is not required.
+
+Use native SiYuan mark types instead of CSS when the desired style is itself a semantic mark:
+
+```html
+<span data-type="u">underlined</span>
+x<span data-type="sup">2</span>
+H<span data-type="sub">2</span>O
+<span data-type="kbd">Ctrl</span>
+<span data-type="tag">todo</span>
+```
+
+Do not fake native marks with CSS such as `style="text-decoration: underline"`, `style="vertical-align: super"`, `style="font-weight: bold"`, or `style="font-style: italic"`. Prefer standard Markdown for bold, italic, strikethrough, mark, and code unless a SiYuan-specific mark is required.
+
+### Rendered HTML blocks
+
+Use an HTML block only when the user wants HTML rendered in the document, not displayed as source code. Prefer a bare block-level element whose opening line starts with `<div`; wrap non-`div` roots in `<div>...</div>` so SiYuan parses the block as rendered HTML.
+
+```html
+<div>
+<ruby>你<rt>ni</rt></ruby>
+</div>
+```
+
+Do not use a fenced `html` code block for rendered HTML. A fenced code block displays source code instead of rendering it.
 
 ## Built-in SiYuan User Guide lookup
 
@@ -254,6 +279,35 @@ Useful grouping:
 ```
 
 Filters can be repeated for notebook IDs, paths, block types, and subtypes. Use only documented values from `siyuan search --help`.
+
+### Process inbox items
+
+The inbox contains cloud-synced clippings, messages, and audio/video/file attachments, and may require a subscription or authentication. Use list output only as a summary; fetch a specific item before deciding how to file it.
+
+```bash
+siyuan inbox list \
+  --page 1 \
+  --workspace "$SIYUAN_WORKSPACE" \
+  --format json
+
+siyuan inbox get \
+  --id "$INBOX_ITEM_ID" \
+  --workspace "$SIYUAN_WORKSPACE" \
+  --format json
+```
+
+Converting inbox items creates local documents and may remove the cloud originals after successful conversion. Treat conversion as a mutation with remote/destructive consequences: verify the item IDs, destination notebook, and destination path; present the exact plan; obtain explicit user confirmation; then create the automatic local snapshot required by the main skill before executing the conversion. Note that a local repository snapshot cannot restore deleted cloud inbox originals.
+
+```bash
+siyuan inbox convert \
+  --ids "$INBOX_ITEM_IDS" \
+  --notebook "$NOTEBOOK_ID" \
+  --path "/Inbox" \
+  --workspace "$SIYUAN_WORKSPACE" \
+  --format json
+```
+
+If an inbox request fails with an authentication or subscription error, report that directly instead of retrying blindly.
 
 ### 3. Create a document
 

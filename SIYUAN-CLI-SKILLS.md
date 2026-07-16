@@ -275,7 +275,7 @@ siyuan notebook list --workspace "$SIYUAN_WORKSPACE" --format json
 
 When several workspaces are registered and the user has not identified one, do not guess. Present the discovered workspace names and paths and ask the user to choose, unless the surrounding task makes one workspace unambiguous.
 
-If a workspace is unavailable, locked, corrupted, or cannot be opened, report the CLI error. Do not bypass protections by editing workspace internals.
+If a workspace or notebook is unavailable, locked, encrypted, corrupted, or cannot be opened, report the CLI error. Do not bypass protections by editing workspace internals or using file-level commands against encrypted notebook data.
 
 ## Output handling
 
@@ -367,6 +367,7 @@ When the user or host environment provides block IDs, document IDs, `siyuan://bl
 | History path                        | `siyuan history list`, `siyuan history search`                                              |
 | Template path                       | `siyuan template search`                                                                    |
 | Asset path                          | Search/read commands, then `siyuan asset stat`                                              |
+| Inbox item ID                       | `siyuan inbox list`, then `siyuan inbox get`                                                |
 
 Distinguish these path types:
 
@@ -441,6 +442,7 @@ Require explicit user authorization for the exact action and scope. Present the 
 - Workspace file deletion
 - History clear or rollback
 - Full-data import or other broad imports
+- Inbox conversion when successful conversion may remove cloud originals
 - Snapshot checkout, purge, or file rollback
 - Cloud sync pull or push
 - Any broad batch change
