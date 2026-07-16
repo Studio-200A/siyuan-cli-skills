@@ -1,121 +1,68 @@
 # SiYuan CLI Workflows
 
-This auxiliary file contains task-specific workflows and examples for `SIYUAN-CLI-SKILLS.md`. Read the main skill file first; all non-negotiable rules, safety levels, confirmation requirements, snapshot rules, and `.sy` file restrictions from the main skill remain mandatory.
+Read `SIYUAN-CLI-SKILLS.md` first. This file contains only SiYuan-specific workflows, content conventions, and tested behaviors that are not reliably derived from ordinary command help.
 
-Consult this file only when a task needs a matching workflow, concrete command pattern, content-input pattern, debugging procedure, SQL guidance, sync/serve handling, or response/content convention.
-
-Command examples in this file illustrate workflow shape and safety sequencing. They are not authoritative syntax references. Before executing a command for the first time in the current session, and whenever syntax, flags, input mode, path semantics, or scope matter, check live `siyuan <command> --help` for the exact installed CLI behavior. Do not transfer input flags such as `--file` or `--markdown` between command families unless live help documents them for the exact command.
-
-Mutation examples in this file do not repeat the full safety sequence every time. The main skill's confirmation and snapshot rules still apply: after user confirmation, include the automatic `repo create` snapshot as the first execution step unless the user explicitly opts out.
+Every command example is illustrative. Before execution, run the exact `siyuan <command> --help` and adapt to the installed version. Mutation examples inherit the main skill's discovery, task-ID confirmation, applicable snapshot, fail-stop, retry-budget, and verification rules.
 
 ## Content input and shell safety
 
-Do not write model reasoning traces, hidden chain-of-thought, planning notes, or provider-specific thinking tags such as `<think>...</think>` into SiYuan content or generated titles unless the user explicitly asks for them.
+Do not write hidden reasoning, planning traces, or provider-specific thinking tags into notes or titles unless the user explicitly requests them.
 
-For multiline Markdown, generated text, or content containing quotes, prefer `--file -` with standard input instead of `--data` only for commands whose live help documents `--file`.
+For multiline Markdown or text containing quotes, prefer a documented stdin/file input instead of embedding content in a shell argument. Use the input mode shown by the exact command's live help; input flags are not interchangeable between command families.
+
+Illustrative POSIX pattern:
 
 ```bash
 cat <<'EOF' | siyuan block append \
   --parent "$PARENT_ID" \
   --file - \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
+  --workspace "$SIYUAN_WORKSPACE"
 ## New section
 
 Content generated for SiYuan.
 EOF
 ```
 
-The same pattern is supported by block insertion/update commands and template creation commands that document `--file <path>` with `-` for stdin.
+Pass external values as separately quoted arguments. Never use `eval`, `sh -c`, or `bash -c` with note content, titles, IDs, paths, database values, or CLI output.
 
-For reusable or auditable content, write a temporary Markdown file first:
+## Command selection patterns
 
-```bash
-tmp_file="$(mktemp --suffix=.md)"
-trap 'rm -f "$tmp_file"' EXIT
-cat >"$tmp_file" <<'EOF'
-# Draft
+| Intent | Workflow shape |
+| --- | --- |
+| Find content | search, then fetch the selected block or document |
+| Explore structure | list/get document, then inspect children and breadcrumbs |
+| Create content | create a document, then append/prepend/insert blocks |
+| Replace one block | read structure, update one block, verify content and sibling order |
+| Modify and add | update first, then append/prepend/insert separately |
+| Organize | use document move/rename for documents and block move for content blocks |
+| Work with attributes | inspect then set block attributes |
+| Work with databases | inspect database, keys, view, item IDs, and value shape before mutation |
+| Process inbox | list summaries, fetch full item, then separately confirm conversion |
 
-Content here.
-EOF
+Do not use block attributes to set notebook icons. A document-block icon and a notebook icon are different targets. Do not invoke an all-notebook randomization when only one notebook is intended.
 
-siyuan block update \
-  --id "$BLOCK_ID" \
-  --file "$tmp_file" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+In the tested CLI, semantic search is part of the search command rather than a standalone `semantic` command. Check current search help for its method value. Before using an external embedding provider, disclose whether the query or note-derived data leaves the local environment.
 
-If the host agent provides a dedicated file-writing tool, prefer that over shell redirection for creating temporary input files. The shell pattern above is for ordinary terminal use.
+## Response and content conventions
 
-Do not interpolate untrusted user text into shell command strings. Pass values as separately quoted arguments or through files/stdin.
+- Reply in the user's language and refer to the product as **SiYuan**.
+- Summarize large documents, logs, search results, and JSON.
+- Link a verified document or block as `[title](siyuan://blocks/ACTUAL_ID)`.
+- Never fabricate a block URI or claim an unsupported feature.
+- Prefer ordinary Markdown when it expresses the requested style.
 
-## Tool and command selection patterns
+### SiYuan text marks
 
-Translate user intent into CLI commands using these patterns:
-
-| Intent                         | Preferred CLI sequence                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Find content                   | `search` → `block get` or `block kramdown`                                                             |
-| Find a document by title       | `document search` → `document get`                                                                     |
-| Explore structure              | `document list` → `document get` → `block children` → `block get`; use `block breadcrumb` for location |
-| Create ordinary content        | `document create` → `block append`, `prepend`, or `insert`                                             |
-| Modify one existing block      | `block update` only; it replaces one block and does not append new blocks                              |
-| Modify and add content         | `block update` first, then a separate `append`, `prepend`, or `insert` call                            |
-| Move a whole document          | `document move`                                                                                        |
-| Rename a document              | `document rename`                                                                                      |
-| Move one content block         | `block move`                                                                                           |
-| Work with block attributes     | `attr get` / `attr set`                                                                                |
-| Work with database rows/fields | `database item ...`, `database key ...`, `database render`                                             |
-| Process cloud inbox items      | `inbox list` → `inbox get` → `inbox convert`                                                           |
-| Change a document-block icon   | `attr set --attr icon=...`                                                                             |
-| Change a notebook icon         | `notebook set-icon` or narrowly scoped `notebook random-icon --id ...`                                 |
-
-Do not use `attr set` to change a notebook icon. Do not run `notebook random-icon` without `--id` unless the user explicitly asks to randomize **all** notebook icons.
-
-SiYuan's built-in agent may expose semantic-search tools that are not present in the tested CLI. SiYuan CLI 3.7.0 provides keyword, query-syntax, SQL, regex, and fuzzy search methods through `siyuan search`; do not invent a semantic-search CLI command.
-
-## Response and SiYuan content conventions
-
-- Reply in the user's language unless they request another language.
-
-- Refer to the product as **SiYuan**, not “SiYuan Note.”
-
-- Summarize large results rather than copying entire documents, logs, or JSON payloads.
-
-- When presenting a specific document or block that the user can open, use:
-  
-  ```markdown
-  [Readable title](siyuan://blocks/ACTUAL_BLOCK_ID)
-  ```
-  
-  Only use a block ID returned by the CLI during the task. Never fabricate a URI.
-
-- Use fenced code blocks with an explicit language.
-
-- Prefer standard Markdown marks where sufficient: `**bold**`, `*italic*`, `~~strikethrough~~`, `==mark==`, and backticks for code.
-
-### SiYuan text marks for styles Markdown cannot express
-
-For text color, background color, or font size, use a SiYuan text mark with a leading `data-type="text"` attribute:
+For text color, background color, or font size, SiYuan requires a text mark with `data-type="text"`:
 
 ```html
 <span data-type="text" style="color: #ff0000;">red text</span>
 <span data-type="text" style="background-color: #ffff00;">highlighted</span>
 <span data-type="text" style="font-size: 18px;">larger text</span>
-<span data-type="text" style="color: #ff0000; font-size: 18px;">red and large</span>
-```
-
-To combine style with bold or italic marks:
-
-```html
 <span data-type="text strong" style="color: #ff0000;">bold red</span>
-<span data-type="text em" style="background-color: #ffff00;">italic highlighted</span>
 ```
 
-Never emit a bare `<span style="...">` for SiYuan content; without `data-type`, it may be escaped and displayed literally. Prefer ordinary Markdown when color, background, or size is not required.
-
-Use native SiYuan mark types instead of CSS when the desired style is itself a semantic mark:
+A bare `<span style="...">` may be escaped and displayed literally. Use native marks for underline, superscript, subscript, keyboard keys, and tags rather than imitating them with CSS:
 
 ```html
 <span data-type="u">underlined</span>
@@ -125,11 +72,9 @@ H<span data-type="sub">2</span>O
 <span data-type="tag">todo</span>
 ```
 
-Do not fake native marks with CSS such as `style="text-decoration: underline"`, `style="vertical-align: super"`, `style="font-weight: bold"`, or `style="font-style: italic"`. Prefer standard Markdown for bold, italic, strikethrough, mark, and code unless a SiYuan-specific mark is required.
-
 ### Rendered HTML blocks
 
-Use an HTML block only when the user wants HTML rendered in the document, not displayed as source code. Prefer a bare block-level element whose opening line starts with `<div`; wrap non-`div` roots in `<div>...</div>` so SiYuan parses the block as rendered HTML.
+Use an HTML block only when the user wants rendered HTML rather than displayed source. SiYuan recognizes a block whose opening line starts with `<div`; wrap another root element in a `div`.
 
 ```html
 <div>
@@ -137,609 +82,129 @@ Use an HTML block only when the user wants HTML rendered in the document, not di
 </div>
 ```
 
-Do not use a fenced `html` code block for rendered HTML. A fenced code block displays source code instead of rendering it.
+A fenced `html` block displays source code instead. Keep generated HTML inert: do not add scripts, event handlers, active URLs, forms, iframes, or remote resources.
 
-## Built-in SiYuan User Guide lookup
+## Built-in User Guide
 
-When the user asks whether SiYuan supports a feature or how a SiYuan feature works, prefer the built-in User Guide over speculation about UI behavior.
+When asked whether or how SiYuan supports a feature, search the built-in User Guide rather than inventing UI behavior. Known notebook IDs from the built-in agent are:
 
-Known guide notebook IDs from the built-in agent implementation:
-
-| Language            | Notebook ID              |
-| ------------------- | ------------------------ |
-| Simplified Chinese  | `20210808180117-czj9bvb` |
+| Language | Notebook ID |
+| --- | --- |
+| Simplified Chinese | `20210808180117-czj9bvb` |
 | Traditional Chinese | `20211226090932-5lcq56f` |
-| Japanese            | `20240530133126-axarxgx` |
-| Other languages     | `20210808180117-6v0mkxr` |
+| Japanese | `20240530133126-axarxgx` |
+| Other languages | `20210808180117-6v0mkxr` |
 
-Procedure:
+Verify that the guide notebook exists, open it if necessary, search within it, and read the relevant result. Treat these IDs as known defaults that may change. If the guide does not verify a feature, say so.
 
-1. Run `notebook list` and verify that the expected guide notebook exists.
-2. If it exists but is closed and access requires it, use `notebook open --id <guide-id>`.
-3. Search within the guide notebook using `siyuan search` with the notebook filter.
-4. Read the most relevant result before answering.
-5. Link cited guide blocks with `siyuan://blocks/<actual-id>` where useful.
-6. If nothing authoritative is found, say that the guide search did not verify the feature. Do not invent a feature or UI workflow.
+## Debugging and output limits
 
-Example:
+For a reported SiYuan error, inspect only a bounded relevant log excerpt and avoid sending credentials or unrelated private note text into model context. If safe redaction is not available, ask the user for a sanitized excerpt. Do not use generic file commands as a back door for editing SiYuan data.
 
-```bash
-GUIDE_NOTEBOOK_ID="20210808180117-czj9bvb"
-
-siyuan search "keyword" \
-  --notebook "$GUIDE_NOTEBOOK_ID" \
-  --method 0 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Treat the fixed IDs as known defaults, not permission to skip verification: localized builds or future versions may differ.
-
-## Debugging SiYuan errors
-
-When the user reports a SiYuan error, crash, failed operation, or unexpected kernel behavior:
-
-1. Resolve the workspace.
-2. Read the last approximately 200 lines of `temp/siyuan.log` (general log) and `temp/siyuan-cli.log` (cli log) before guessing at a fix.
-3. Summarize the relevant errors, timestamps, and affected subsystem.
-4. Correlate them with the failed CLI command or user action.
-5. Only then propose or execute a repair.
-
-When direct filesystem access is available:
-
-```bash
-tail -n 200 "$SIYUAN_WORKSPACE/temp/siyuan.log"
-```
-
-and/or:
-
-```bash
-tail -n 200 "$SIYUAN_WORKSPACE/temp/siyuan-cli.log"
-```
-
-When only the CLI should be used for reading, note that `siyuan file read` in 3.7.0 has no offset or limit flags. Avoid dumping the full log into the final response; capture it, inspect the tail locally, and summarize only relevant lines:
-
-```bash
-log_output="$(siyuan file read "temp/siyuan.log" \
-  --workspace "$SIYUAN_WORKSPACE")"
-
-printf '%s\n' "$log_output" | tail -n 200
-```
-
-and/or:
-
-```bash
-cli_log_output="$(siyuan file read "temp/siyuan-cli.log" \
-  --workspace "$SIYUAN_WORKSPACE")"
-printf '%s\n' "$cli_log_output" | tail -n 200
-```
-
-Do not paste the full log by default. Redact secrets and unrelated private content. The `file` command family is appropriate for logs and explicit workspace-file tasks, but not as a back door for editing structured SiYuan data.
-
-## Output-size discipline
-
-- Use pagination for search, history, repository, and database results.
-- Respect the default `--limit 200` behavior of `file find` and `file grep`, changing it only when needed.
-- Narrow queries or use CLI pagination/limit flags before raising result sizes.
-- If output is truncated, captured, or redirected to a file by the host agent, retrieve only the relevant next segment or slice rather than loading everything blindly.
+Use pagination and narrow filters for search, history, repository, database, and file results. If a host tool truncates output, read only the relevant continuation rather than loading the entire capture.
 
 ## Common workflows
 
-### 1. Find and read a document
+### Find and read
 
-```bash
-SIYUAN_WORKSPACE="/absolute/path/to/workspace"
+Choose document search when finding a document by title and full-text search when finding content or blocks. Fetch the selected object after search rather than answering from a summary row. Use structured get output for metadata and block Kramdown when the actual Markdown content is needed.
 
-siyuan document search "meeting notes" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan document get \
-  --id "$DOCUMENT_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan block kramdown \
-  --id "$DOCUMENT_ID" \
-  --mode md \
-  --workspace "$SIYUAN_WORKSPACE"
-```
-
-Use `document list --notebook <id>` when the notebook and location are already known. Use full-text `search` when looking for blocks or content across documents.
-
-### 2. Search the knowledge base
-
-Basic keyword search:
-
-```bash
-siyuan search "release plan" \
-  --method 0 \
-  --order-by 7 \
-  --page 1 \
-  --page-size 32 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Useful search method values:
-
-```text
-0 = keyword
-1 = query syntax
-2 = SQL
-3 = regex
-4 = fuzzy
-```
-
-Useful grouping:
-
-```text
-0 = no grouping
-1 = group by document
-```
-
-Filters can be repeated for notebook IDs, paths, block types, and subtypes. Use only documented values from `siyuan search --help`.
+Do not assume that a global JSON flag makes raw-content commands return JSON. In CLI 3.7.2, block Kramdown is raw text.
 
 ### Process inbox items
 
-The inbox contains cloud-synced clippings, messages, and audio/video/file attachments, and may require a subscription or authentication. Use list output only as a summary; fetch a specific item before deciding how to file it.
-
-```bash
-siyuan inbox list \
-  --page 1 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan inbox get \
-  --id "$INBOX_ITEM_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Converting inbox items creates local documents and may remove the cloud originals after successful conversion. Treat conversion as a mutation with remote/destructive consequences: verify the item IDs, destination notebook, and destination path; present the exact plan; obtain explicit user confirmation; then create the automatic local snapshot required by the main skill before executing the conversion. Note that a local repository snapshot cannot restore deleted cloud inbox originals.
-
-```bash
-siyuan inbox convert \
-  --ids "$INBOX_ITEM_IDS" \
-  --notebook "$NOTEBOOK_ID" \
-  --path "/Inbox" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-If an inbox request fails with an authentication or subscription error, report that directly instead of retrying blindly.
-
-### 3. Create a document
+Inbox list output is a summary. Fetch the full item before deciding where it belongs.
 
-Discover the notebook first:
+Conversion creates local documents and may remove cloud originals after success. Verify item IDs and the destination, explain the remote deletion consequence, obtain task-ID confirmation, and create the applicable local snapshot before conversion. A local snapshot cannot restore deleted cloud originals.
 
-```bash
-siyuan notebook list \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+CLI 3.7.2 destination-path behavior does not reliably match the conversion help wording. Do not convert unless the installed version's destination behavior is independently known. Authentication or subscription failures are deterministic until account state changes; report them rather than retrying.
 
-Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
-
-```bash
-siyuan document create \
-  --notebook "$NOTEBOOK_ID" \
-  --path "/" \
-  --title "New document" \
-  --markdown "Initial content" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+### Create or duplicate a document
 
-After execution, capture the returned document ID and verify it with `document get` and `block kramdown`.
+For creation, discover the notebook and parent location, check live help for the command's actual path and content inputs, create the document, capture the observed result, then fetch the document and content to verify it.
 
-Do not pipe multiline content into `document create --file -` unless live help explicitly documents `--file` for `document create`. In the tested CLI, `document create` uses `--markdown` for initial content. For substantial content, create the document first, then append or update content through a block command using `--file -` or a temporary Markdown file where supported.
+CLI 3.7.2 document creation prints the new ID as plain text even when JSON format is requested.
 
-### 4. Safely update a block
+For duplication, record the source's parent and candidate siblings before execution. CLI 3.7.2 prints the source ID, not the duplicate ID. Discover the duplicate from the before/after document state and verify exactly one plausible new document before using it in another step.
 
-Read and preserve the current content:
+### Update one block
 
-```bash
-siyuan block kramdown \
-  --id "$BLOCK_ID" \
-  --mode md \
-  --workspace "$SIYUAN_WORKSPACE"
-```
+Read the target content, breadcrumb, and parent's child order. Use block update only to replace one existing block. To add content, use append, prepend, or insert instead.
 
-Include the task's one automatic snapshot as the first item in the operation plan. After the user confirms, create the snapshot before updating the block:
-
-```bash
-siyuan repo create \
-  --memo "External AI agent auto snapshot: update block $BLOCK_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+CLI 3.7.2 does not enforce that update input contains only one top-level block, and its dry-run returns before parsing the payload. Keep update input deliberately single-block. If the content may parse into several top-level blocks, use an insertion workflow or a trusted SiYuan-compatible parser. After update, re-read both content and sibling order.
 
-After the snapshot succeeds, execute the confirmed block update:
+### Insert below a heading
 
-```bash
-siyuan block update \
-  --id "$BLOCK_ID" \
-  --file "/path/to/replacement.md" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+A heading is not a parent. Read the heading, breadcrumb, and actual parent's children. Find the last sibling in the heading's visual section, then insert under the real parent after that sibling. If the section is empty, insert after the heading itself. Verify the new sibling order.
 
-Read the Kramdown again and compare the raw output with the intended content.
+### Use today's daily note
 
-`block update` replaces the target block content. Do not use it when append, prepend, or insertion is the actual intent.
+Use the daily-note command family, not ordinary document creation. Resolve or create today's note in the intended notebook, then append or prepend the requested content and verify it. If execution occurs around a date boundary, re-check which daily note is current rather than assuming the earlier target remains correct. If the target document changes, invalidate the current task ID and present the revised target under a new ID for confirmation.
 
-### 4A. Insert content below a heading safely
+### Attributes and icons
 
-A heading cannot be used as `--parent`. Inspect the structure first:
+Read current attributes before changing them. Follow live help for the current attribute-input syntax. A title image uses SiYuan's CSS `background-image` form rather than a bare asset path.
 
-```bash
-siyuan block get \
-  --id "$HEADING_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
+Changing a document block's icon does not change a notebook icon. Use the notebook command family for notebook icons and keep randomization scoped to the intended notebook.
 
-siyuan block breadcrumb \
-  --id "$HEADING_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan block children \
-  --id "$ACTUAL_PARENT_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+### Databases
 
-Determine the last sibling in that heading's section, present the plan, and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
-
-```bash
-cat <<'EOF' | siyuan block insert \
-  --parent "$ACTUAL_PARENT_ID" \
-  --previous "$LAST_BLOCK_IN_SECTION_ID" \
-  --file - \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-New content below the heading.
-EOF
-```
-
-After execution, read the parent's children again to verify ordering. If the heading currently has no section content, use the heading ID as `--previous` and its actual container as `--parent`.
-
-### 5. Append to today's daily note
-
-For any diary, journal, daily log, or today's-note request, use this command family rather than `document create`. For appending or prepending content, present the plan and obtain user confirmation; after creating the automatic snapshot required by the main skill, execute the write commands shown below.
-
-`dailynote create` is a get-or-create operation for today's daily note; use the returned document/block ID for subsequent append or prepend operations.
+Before changing a database, discover the attribute-view ID, view, key ID, item ID, and the exact JSON value shape expected by the current field. Do not infer schemas or key types from names, and read current live help rather than relying on a static enum list.
 
-```bash
-siyuan dailynote create \
-  --notebook "$NOTEBOOK_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-cat <<'EOF' | siyuan dailynote append \
-  --notebook "$NOTEBOOK_ID" \
-  --file - \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-## Agent log
-
-- Completed the requested task.
-EOF
-```
-
-Use `prepend` only when content must appear at the beginning of the daily note.
+In CLI 3.7.2, adding a non-detached row requires a block ID even though help suggests the block can be generated. Use detached mode only when a detached row is intended. Verify changes through database rendering.
 
-### 6. Work with block attributes
+### Export
 
-Read first:
+Confirm the source, format, and destination before writing an external file. Avoid silently overwriting an existing file; a repository snapshot cannot restore it.
 
-```bash
-siyuan attr get \
-  --id "$BLOCK_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
+CLI 3.7.2 file exports may produce no stdout, and some paths may suppress an underlying error. Verify the resulting regular file and its expected format/content. For `.sy.zip` export, provide a complete output filename rather than a directory despite ambiguous usage text.
 
-```bash
-siyuan attr set \
-  --id "$BLOCK_ID" \
-  --attr 'tags=project,review' \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+### Import
 
-Attributes may be repeated with multiple `--attr name=value` arguments. Follow live help for special formats such as `icon` and `title-img`. A title image requires CSS `background-image` syntax rather than a bare asset path.
-
-`attr set` changes attributes on a block, including a document block. It does not set notebook icons. Use `notebook set-icon --id ...` for a specific notebook, and never omit `--id` from `notebook random-icon` unless changing every notebook is intentional.
+Verify the source and exact destination before import. For a non-root destination, resolve the existing destination document and hPath first. CLI 3.7.2 can silently fall back to notebook root when an hPath is unresolved and does not create a missing destination folder.
 
-### 7. Inspect and update a database
-
-Discover databases:
-
-```bash
-siyuan database search "Tasks" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+For an explicitly intended notebook-root import, use the root path form documented by current live help rather than relying on fallback. Treat directory, archive, and full-backup imports as broad mutations and call out their scope before confirmation.
 
-Inspect structure and data:
+### References
 
-```bash
-siyuan database get \
-  --av "$AV_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan database keys \
-  --av "$AV_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
+Use backlinks and mentions as reads. In CLI 3.7.2, their JSON output appends a human-readable count, so the complete stdout is not valid JSON. Use table output or handle the observed mixed format. Refresh references only when explicitly requested or required by a verified workflow.
 
-siyuan database render \
-  --av "$AV_ID" \
-  --page 1 \
-  --size 50 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+### History and recovery
 
-Before updating a cell, discover the exact attribute-view ID, key ID, item ID, and required JSON value shape. Do not infer the value schema from the field name alone. Present the plan and obtain user confirmation. After creating the automatic snapshot required by the main skill, execute:
+Search or list history before reading an entry. In CLI 3.7.2, JSON listing omits individual history paths, so use observed human-readable output to discover the path. History content is raw rather than JSON.
 
-```bash
-siyuan database item update \
-  --av "$AV_ID" \
-  --key "$KEY_ID" \
-  --item "$ITEM_ID" \
-  --value "$CELL_VALUE_JSON" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+Rollback requires verification of the exact history entry and current target, an applicable snapshot of current local state, task-ID confirmation, and post-rollback verification. Stop concurrent writes or sync that could invalidate the recovery target.
 
-Database key types documented in 3.7.0 are:
+### Repository snapshots
 
-```text
-block text number date select mSelect url email phone mAsset template
-created updated checkbox relation rollup lineNumber
-```
+For covered workspace mutations, create one snapshot after approval and before the first write. CLI 3.7.2 reports `created snapshot <id>` as plain text; verify that the snapshot exists before relying on it.
 
-Use the exact type spelling shown by live help.
+Repository checkout, purge, and file rollback are high impact. A snapshot cannot protect repository data from purge, and local recovery does not automatically reconcile remote sync state.
 
-### 8. Export a document
-
-Markdown to stdout:
-
-```bash
-siyuan export md \
-  --id "$DOCUMENT_ID" \
-  --workspace "$SIYUAN_WORKSPACE"
-```
+### Assets
 
-Markdown to a file:
+Listing unused assets does not authorize deletion. Before cleaning an asset, verify its exact path and current unused status, explain the deletion, obtain approval, create the applicable snapshot, then re-check unused status and verify removal.
 
-```bash
-siyuan export md \
-  --id "$DOCUMENT_ID" \
-  --output "/absolute/path/document.md" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+Prefer one explicitly identified asset over broad cleanup.
 
-Other supported export targets include HTML, preview HTML, DOCX, Markdown ZIP, `.sy.zip`, and a full workspace data backup. Do not overwrite an existing user file without approval.
+### Workspace file commands
 
-### 9. Import Markdown
+Use generic file commands for logs, debugging, and explicitly requested non-internal files. Never use them to modify documents, blocks, notebooks, databases, indexes, references, or `.sy` data. Do not assume every workspace file is covered by repository snapshots.
 
-Inspect the destination notebook and path first, then present the plan with the source path, target notebook, and destination hpath. Obtain explicit user confirmation; after creating the automatic snapshot required by the main skill, execute:
-
-```bash
-siyuan import md \
-  --file "/absolute/path/source" \
-  --notebook "$NOTEBOOK_ID" \
-  --hpath "/Imported" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+### SQL
 
-Importing a directory or backup can create many documents. Treat broad imports as high impact — flag them prominently in the plan.
+Use SQL only when higher-level read commands cannot answer the question efficiently. Execute one clearly read-only query with a bounded result. Never attempt write or schema statements, even with user approval; use domain commands for mutations.
 
-### 10. Inspect references
+The CLI has no parameter-binding interface. Do not interpolate untrusted text into SQL literals. Prefer search or a domain command for dynamic user-provided values, and verify schema names instead of guessing them.
 
-```bash
-siyuan ref backlinks \
-  --id "$BLOCK_ID" \
-  --sort 0 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan ref mentions \
-  --id "$BLOCK_ID" \
-  --sort 0 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Use `ref refresh` only when the user asks to refresh references or when a verified workflow requires it. It requires clear user intent, but it does not require an automatic snapshot.
-
-### 11. Inspect history and recover content
-
-Search history first:
+### Synchronization
 
-```bash
-siyuan history search "keyword" \
-  --page 1 \
-  --type 1 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Read a historical file:
-
-```bash
-siyuan history get \
-  --path "$HISTORY_PATH" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
+Status inspection is read-only. Pull and push affect remote state, so confirm the intended direction rather than choosing it for the user. Before pull, create an applicable snapshot of current local state; a local snapshot cannot undo a push.
 
-Do not run `history rollback` until the exact historical path and target have been verified and the user has approved the rollback.
+CLI 3.7.2 may print `ok` without propagating the actual transfer result. Compare sync status and verify expected local effects after pull. If remote success remains uncertain, report the ambiguity and stop dependent writes.
 
-### 12. Use snapshots for protection and recovery
+### Serve
 
-In a mutation task, include one automatic snapshot as the first planned execution step. After the user confirms the plan, create it and retain its returned ID:
-
-```bash
-siyuan repo create \
-  --memo "External AI agent auto snapshot: batch edit" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-List and compare snapshots:
+Start the HTTP server only when explicitly requested; ordinary CLI work does not require it. Check current live help, use read-only mode when writes are unnecessary, provide the access-auth code through the host's secret mechanism, and avoid exposing it in arguments or logs.
 
-```bash
-siyuan repo list \
-  --page 1 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan repo diff \
-  --left "$LEFT_SNAPSHOT_ID" \
-  --right "$RIGHT_SNAPSHOT_ID" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-`repo checkout`, `repo purge`, and `repo file rollback` are destructive recovery operations. Require explicit confirmation. If the automatic snapshot cannot be created, stop planned writes by default rather than continuing unprotected.
-
-### 13. Inspect unused assets safely
-
-```bash
-siyuan asset unused \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan asset stat \
-  --path "$ASSET_PATH" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Only after confirming a specific asset is unused, present the plan and obtain explicit user confirmation. After creating the automatic snapshot required by the main skill, execute:
-
-```bash
-siyuan asset clean \
-  --path "$ASSET_PATH" \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Never interpret “list unused assets” as authorization to delete them.
-
-### 14. Use workspace file commands carefully
-
-Read-only examples:
-
-```bash
-siyuan file find "data/templates" \
-  --include '*.md' \
-  --limit 200 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-
-siyuan file grep \
-  --pattern 'TODO|FIXME' \
-  --path "data/templates" \
-  --include '*.md' \
-  --context 2 \
-  --limit 200 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Default to file commands for logs, debugging, and explicitly requested workspace-file operations. Use file writes, renames, copies, and deletions only for clearly identified non-internal files and explicit user intent. Never use them for documents, blocks, attributes, databases, notebooks, indexes, or `.sy` data.
-
-### 15. Execute SQL conservatively
-
-Use SQL only when higher-level commands cannot answer the question efficiently.
-
-```bash
-siyuan sql \
-  "SELECT id, content, type FROM blocks WHERE content LIKE '%keyword%' LIMIT 20" \
-  --limit 100 \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Agent policy:
-
-- Default to `SELECT` only.
-- Include an explicit `LIMIT` in the statement and use `--limit`.
-- Do not use `INSERT`, `UPDATE`, `DELETE`, `REPLACE`, `DROP`, `ALTER`, `CREATE`, `PRAGMA`, or other write/schema statements unless the user explicitly requests a database-level operation and accepts the risk.
-- Prefer `search`, `document`, `block`, `database`, and `attr` commands for normal operations.
-- Never assume table or column names; inspect known documentation or a verified schema first.
-
-### 16. Synchronization
-
-Inspect status freely:
-
-```bash
-siyuan sync status \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --format json
-```
-
-Treat pull and push as high impact because they interact with remote state. Present the plan, include the automatic safety snapshot as the first execution step after confirmation unless the user explicitly opts out, and obtain explicit user confirmation before executing:
-
-```bash
-siyuan sync pull --workspace "$SIYUAN_WORKSPACE" --format json
-siyuan sync push --workspace "$SIYUAN_WORKSPACE" --format json
-```
-
-Do not choose pull versus push on the user's behalf when the intended direction is ambiguous.
-
-### 17. Start the HTTP server only when requested
-
-```bash
-siyuan serve \
-  --workspace "$SIYUAN_WORKSPACE" \
-  --port "6806" \
-  --mode prod \
-  --readonly true \
-  --accessAuthCode "$AUTH_CODE"
-```
-
-Before starting the server:
-
-- Confirm that a server is actually needed; direct CLI commands do not require it for normal CLI workflows.
-- Prefer read-only mode when writes are unnecessary.
-- Use an access authentication code when the server may be reachable outside a trusted local environment.
-- Consider `--ssl` when appropriate.
-- Do not expose secrets in logs or command summaries.
-- Do not use `--attach-ui` unless integrating with the desktop UI lifecycle.
-
-## Command selection guide
-
-| User intent                            | Preferred command family                                          |
-| -------------------------------------- | ----------------------------------------------------------------- |
-| Find text or blocks                    | `search`, then `block`                                            |
-| Find a document by title               | `document search`                                                 |
-| Inspect a document                     | `document get` / `document info`, `block kramdown`, `outline get` |
-| Create or organize documents           | `document`                                                        |
-| Read or change block content           | `block`                                                           |
-| Read or change custom attributes       | `attr`                                                            |
-| Work with daily notes                  | `dailynote`                                                       |
-| Work with attribute-view databases     | `database`                                                        |
-| Read backlinks or mentions             | `ref`                                                             |
-| Work with notebooks                    | `notebook`                                                        |
-| Work with templates                    | `template`                                                        |
-| Import/export data                     | `import`, `export`                                                |
-| Inspect or clean assets                | `asset`                                                           |
-| Read workspace files                   | `file`                                                            |
-| Search or restore history              | `history`                                                         |
-| Create, inspect, or restore snapshots  | `repo`                                                            |
-| Inspect tags or bookmarks              | `tag`, `bookmark`                                                 |
-| Check or run cloud synchronization     | `sync`                                                            |
-| Run a precise read-only database query | `sql`                                                             |
-| Start the kernel HTTP service          | `serve`                                                           |
+CLI 3.7.2 ignores dry-run for `serve` and starts the server. Confirm the intended lifetime and stop the process when the task ends. Keep access local unless the user has explicitly arranged appropriate authenticated network exposure.

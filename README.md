@@ -6,36 +6,37 @@
 
 ## 1. What It Is and What It Does
 
-**SIYUAN-CLI-SKILLS.md** is an AI Agent operating manual for the SiYuan CLI. Place it and its companion documents in a directory accessible to any AI assistant that can read files (Claude Code, Cursor, CodeBuddy, etc.), and that AI will be able to **search, read, create, edit, organize, import/export, snapshot-protect, and sync-manage** your SiYuan note workspace via the `siyuan` command-line tool.
+**SIYUAN-CLI-SKILLS.md** is an AI Agent operating manual for the SiYuan CLI. Place it and its companion documents in a directory accessible to an AI assistant that can read the files and, with your authorization, execute the local `siyuan` CLI against the intended workspace (Claude Code, Cursor, CodeBuddy, etc.). The AI can then **search, read, create, edit, organize, import/export, snapshot-protect, and sync-manage** your SiYuan workspace where the corresponding account features and configuration are available.
 
 In short: it serves as a translator between SiYuan Note and external AI, teaching the AI how to safely operate your notes.
 
-## 2. It Comes from the Official agent.go — "Adapted", Not Reinvented
+## 2. Built on SiYuan's Agent Design Paradigm and Official Kernel CLI
 
-SiYuan 3.7.0's kernel includes a built-in AI agent (source [`agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go)), which defines a complete paradigm: the block domain model (container blocks/leaf blocks), the heading non-container pitfall, the `safeActions` read/write whitelist, doom loop detection, one-time automatic snapshots, the `[tool_output]` untrusted data marker... However, these designs serve the **built-in agent + GUI dialog confirmation** flow.
+This project separates three layers of design and adaptation:
 
-This document **externalizes** that entire paradigm:
+- **Agent design paradigm:** adapted from the overall system prompt and safety intent in SiYuan's built-in [`kernel/agent/agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go). This includes the block-tree domain model, dedicated domain tools, read/write separation, confirmation before writes, recovery snapshots, untrusted tool output, fail-stop behavior, and protection against no-progress loops. The skill does not reproduce runtime mechanisms such as `safeActions`, confirmation channels, or the doom-loop tracker in natural language.
+- **CLI execution semantics:** the installed CLI's live help determines current command paths, flags, and input modes. Selected behaviors that live help cannot reveal or describes inaccurately were checked against SiYuan CLI 3.7.2, the official [`kernel/cli/cmd`](https://github.com/siyuan-note/siyuan/tree/master/kernel/cli/cmd) implementation, and observed output, then recorded as version-qualified caveats.
+- **External-agent adaptation:** the built-in UI confirmation becomes task-ID confirmation, the recovery-point intent becomes one applicable snapshot per confirmed task, and loop prevention becomes an evidence-based retry budget. These preserve the built-in design intent without pretending to reimplement its Go runtime in Markdown.
 
-- agent.go uses GUI dialogs for user confirmation of each write operation → this document instead lists an operation plan and waits for textual user confirmation
-- agent.go has a `safeActions` whitelist that auto-approves read-only operations → this document classifies operations into Safety Levels 1/2/3
-- agent.go uses a `snapshotCreated` flag to ensure only one snapshot per session → this document incorporates snapshots into the operation plan and executes them after confirmation
-- agent.go uses a `doomLoopTracker` to detect duplicate signatures and terminate loops → this document mandates switching methods after 3 consecutive failures of the same command, and aborting that method after 5 failures
+The built-in agent's GUI and tool behavior is not copied mechanically. Only its applicable design principles are carried into the external CLI scenario, while command syntax remains governed by the installed CLI.
 
-**It is not a direct translation of agent.go, but rather preserves its security philosophy and operation boundaries, implementing each mechanism as an executable equivalent in the CLI context.**
+**In short: the built-in agent provides the domain and safety paradigm; the official Kernel CLI provides executable semantics; this project supplies the external-agent adaptation layer.**
+
+There is an important enforcement difference: the built-in agent enforces confirmation, snapshots, output controls, and loop termination in code, while this CLI skill is policy followed by the host AI agent. The CLI does not prevent an agent from bypassing these instructions. Environments that require non-bypassable controls need a separate command wrapper or execution policy layer.
 
 ## 3. Safety Design Overview
 
-Because the `siyuan` CLI directly manipulates kernel data, has no GUI confirmation dialogs, and offers no undo functionality, an external agent is significantly more dangerous than the built-in one. This document mitigates risk with a four-layer safety mechanism:
+Because the `siyuan` CLI directly manipulates kernel data, has no GUI confirmation dialogs, and offers no general undo functionality, an external agent is significantly more dangerous than the built-in one. This document mitigates risk with four policy layers enforced by the host agent:
 
-**Layer 1: Snapshot safety net.** After the user confirms the operation plan, the first execution step is to create a data snapshot. If something goes wrong, you can roll back with `repo checkout`. The snapshot ID is explicitly communicated to the user.
+**Layer 1: Applicable snapshot safety net.** For repository-covered local workspace mutations, the first confirmed execution step is to create and verify a snapshot. A snapshot is not universal undo: it cannot restore cloud inbox originals, guarantee remote sync restoration, or reverse changes outside its coverage, and rollback is itself high risk.
 
-**Layer 2: User confirmation.** After the discovery phase gathers all information, a complete operation checklist (each command, target ID, expected result) is presented. The agent waits for the user to say "confirm" before proceeding. No silent writes.
+**Layer 2: Task-ID-bound mutation confirmation.** The agent first discovers the exact target, then presents the change, scope, and material consequences under a short sequential task ID such as `001`. Execution requires confirmation of that exact ID. A changed requirement or plan invalidates the old ID and produces the next plan, such as `002`.
 
-**Layer 3: Step-by-step verification.** After each execution step, the agent immediately uses read commands to verify the result, rather than relying on "zero exit code = success".
+**Layer 3: Step-by-step verification.** After each execution step, the agent uses an appropriate read, status, filesystem, process, or network check rather than relying on "zero exit code = success".
 
-**Layer 4: Failure circuit breaker.** The agent automatically switches methods after 3 consecutive failures of the same command, and terminates that approach after 5 failures, preventing infinite loops.
+**Layer 4: Evidence-based failure circuit breaker.** Deterministic errors are not retried unchanged; clearly transient failures allow at most two retries. The agent stops after 3 failed corrective approaches or 5 failed command attempts for one intended operation, whichever comes first, and continues only with new evidence, changed state, or user direction.
 
-**Additional defense line:** Rules are hardcoded to "never fabricate IDs, paths, or block types" — all identifiers must be discovered from the actual workspace, eliminating AI hallucination risks. All content returned by SiYuan is treated as untrusted data to prevent prompt injection.
+**Additional defense line:** The skill requires the agent to never fabricate IDs, paths, or block types; all identifiers must be discovered from the actual workspace. All content returned by SiYuan is treated as untrusted data to reduce prompt-injection risk.
 
 ## 4. How to Use
 
@@ -47,8 +48,8 @@ Place these files in the same directory accessible to your AI:
 
 | File                      | Purpose                                                                                                                                  |
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `SIYUAN-CLI-SKILLS.md`    | Main entry: mandatory rules, safety boundaries, domain model, SOP, error handling, report format                                         |
-| `SIYUAN-CLI-WORKFLOWS.md` | On-demand reference: common workflows, content input, debugging, SQL, sync, import/export, assets, databases, and other scenario details |
+| `SIYUAN-CLI-SKILLS.md`    | Main entry: stable safety rules, domain model, SOP, error handling, and tested CLI caveats                                                |
+| `SIYUAN-CLI-WORKFLOWS.md` | On-demand reference: non-obvious workflows, content conventions, debugging, SQL, sync, import/export, assets, and databases              |
 
 Then say in the conversation: "Please read `SIYUAN-CLI-SKILLS.md` first, then help me search/create/manage SiYuan notes. When specific workflows are needed, refer to `SIYUAN-CLI-WORKFLOWS.md` as guided by the main document. For specific command parameters, always check real-time `siyuan <command> --help`."
 
@@ -78,7 +79,7 @@ This explicitly guides the AI agent to prioritize obtaining the most accurate co
 
 ### Required Dependency: SiYuan CLI
 
-This skill depends on the kernel CLI provided by SiYuan 3.7.0 and above. See the official CLI documentation in the [Command-line Interface section](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface).
+This skill depends on the kernel CLI provided by SiYuan 3.7.2 and above. See the official CLI documentation in the [Command-line Interface section](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface).
 
 According to the official documentation, the CLI binary is:
 
@@ -102,7 +103,7 @@ Verify with:
 siyuan --version
 ```
 
-If you get `command not found`, make sure SiYuan 3.7.0+ is installed and follow the official instructions to create a symlink or configure `PATH`. If you prefer not to configure `PATH`, you can also provide the full path when talking to the AI, for example:
+If you get `command not found`, make sure SiYuan 3.7.2+ is installed and follow the official instructions to create a symlink or configure `PATH`. If you prefer not to configure `PATH`, you can also provide the full path when talking to the AI, for example:
 
 ```text
 My SiYuan CLI path is: /path/to/SiYuan/resources/kernel/SiYuan-Kernel
@@ -110,7 +111,7 @@ My SiYuan CLI path is: /path/to/SiYuan/resources/kernel/SiYuan-Kernel
 
 ### Recommended Dependency: `jq`
 
-`jq` is a command-line JSON processing tool. SiYuan CLI's `--format json` produces a lot of output. When the AI agent extracts notebook IDs, block IDs, snapshot IDs, database fields, search results, etc., using `jq` is more stable than manually parsing large blocks of JSON.
+`jq` is a command-line JSON processing tool. For commands verified to emit valid JSON, it is more reliable than manually parsing large output when extracting notebook IDs, block IDs, database fields, or search results. Some commands return plain text, raw content, or mixed output even when `--format json` is accepted, so inspect the exact command's output before using `jq`.
 
 Strictly speaking, `jq` is not a hard dependency of the SiYuan CLI; however, it is strongly recommended for more reliable operation of this skill.
 
@@ -183,14 +184,14 @@ jq --version
 
 ## 6. Customization
 
-All content in these documents can be freely modified to suit your usage habits. Common customization scenarios:
+Customization must not silently remove safety controls from a write-capable external agent. Safer customization patterns include:
 
-- **Don't want to wait for confirmation every time**: Remove SOP step 11 (present plan and wait for confirmation) and the related requirements in Rule 11. The AI will execute immediately after discovery.
-- **Don't want snapshots**: Remove Rule 10 and SOP step 12. The AI will skip snapshots and operate directly.
-- **Read-only AI access**: Remove all Safety Level 2 and Level 3 commands. The AI will only perform queries.
-- **Add custom workflows**: Append your own fixed operation patterns to the Common Workflows section in `SIYUAN-CLI-WORKFLOWS.md`.
+- **Reduce confirmation friction:** use a separate wrapper-enforced allowlist for narrowly scoped operations; do not remove task-ID confirmation from a generally write-capable skill.
+- **Snapshot applicability:** assess whether a local snapshot protects the planned change. When the core policy requires one, create and verify it rather than opting out; when it does not apply, disclose the recovery limitation in the task plan.
+- **Read-only AI access:** enforce a command allowlist outside the prompt that excludes every mutation, sync, rollback, import, export-to-file, and server action.
+- **Add custom workflows:** add only stable domain knowledge or behavior that live help cannot reveal, while preserving confirmation, fail-stop behavior, output verification, and the main document's safety boundaries.
 
-All documents are Markdown files and can be edited with any editor. Save your changes and the AI will read your customized version next time.
+All documents are Markdown files, but prompt text is not a non-bypassable security boundary. Use a wrapper or execution policy for controls that must be enforced.
 
 ## 7. Cross-Platform Usage Notes
 
@@ -212,7 +213,7 @@ Common areas requiring rewriting:
 | `mktemp`              | `[System.IO.Path]::GetTempFileName()`          |
 | `tail -n 200 file`    | `Get-Content file -Tail 200`                   |
 | `rm -f file`          | `Remove-Item -Force file`                      |
-| `$?` / `$status`      | `$LASTEXITCODE`                                |
+| `$?`                  | `$LASTEXITCODE`                                |
 | `/absolute/path/...`  | `C:\...` or PowerShell-recognized path         |
 
 If you use Git Bash, WSL, MSYS2, or other Unix-like shells on Windows, you can continue to reference the bash examples in the document, but you should still confirm that `siyuan` is in that shell's `PATH`.

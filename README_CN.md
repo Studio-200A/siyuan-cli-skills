@@ -6,36 +6,37 @@
 
 ## 1. 它是什么，干什么用
 
-**SIYUAN-CLI-SKILLS.md** 是一份 AI Agent 的思源 CLI 操作说明书。把它和配套辅助文档放在任何一个支持读取文件的 AI 助手（Claude Code、Cursor、CodeBuddy 等）能访问到的目录里，这个 AI 就能通过 `siyuan` 命令行工具帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**你的思源笔记工作空间。
+**SIYUAN-CLI-SKILLS.md** 是一份 AI Agent 的思源 CLI 操作说明书。将它和配套辅助文档提供给能够读取这些文件，并可在你授权后执行本地 `siyuan` CLI、访问目标工作空间的 AI 助手（Claude Code、Cursor、CodeBuddy 等），在相应账户功能和配置可用时，这个 AI 就能帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**思源工作空间。
 
 简单说：它是思源笔记和外部 AI 之间的翻译官，让 AI 知道怎么安全地操作你的笔记。
 
-## 2. 它来自官方 agent.go，是"化用"而非重造
+## 2. 基于思源内置 Agent 设计范式与官方 Kernel CLI
 
-思源 3.7.0 内核内置了一个 AI agent（源码 [`agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go)），它定义了一套完整的范式：block 领域模型（容器块/叶子块）、heading 非容器的坑、`safeActions` 读写白名单、doom loop 死循环检测、一度自动快照、`[tool_output]` 不可信数据标记……但这些设计是**为内置 agent + GUI 弹窗确认**服务的。
+本项目区分三个设计与适配层：
 
-本文档将这整套范式**外部化**了：
+- **Agent 设计范式：** 参考思源内置 [`kernel/agent/agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go) 的整体 system prompt 与安全意图，包括 block 树领域模型、专用领域工具、读写区分、写前确认、恢复快照、不可信工具输出、失败即停和防止无进展循环。文档不会用自然语言复现 `safeActions`、确认通道或 doom-loop tracker 等 runtime 机制。
+- **CLI 执行语义：** 当前安装版本的实时 help 决定命令路径、参数和输入方式。对于实时 help 无法揭示或描述不准确的少量行为，本项目通过思源 CLI 3.7.2、官方 [`kernel/cli/cmd`](https://github.com/siyuan-note/siyuan/tree/master/kernel/cli/cmd) 实现和实际输出进行核对，并记录为带版本限定的 caveat。
+- **外部 Agent 适配：** 使用任务 ID 承接内置 UI 确认，以每个已确认任务的一次适用快照承接恢复点意图，并通过基于证据的重试预算防止无进展循环。这些规则保留了内置设计意图，而不是在 Markdown 中重新实现 Go runtime。
 
-- agent.go 通过 UI 弹窗让用户确认每个写操作 → 本文档改为列出操作计划、等用户文本确认
-- agent.go 有 `safeActions` 白名单自动放行只读操作 → 本文档划出 Safety Level 1/2/3 三级分类
-- agent.go 用 `snapshotCreated` 标记确保一次会话只打一次快照 → 本文档将快照纳入操作计划、确认后执行
-- agent.go 用 `doomLoopTracker` 检测签名重复终止循环 → 本文档规定同命令失败 3 次后换方法，5 次后终止该方法
+内置 Agent 的 GUI 和工具行为不会被机械照搬。本项目只将适用的设计原则带入外部 CLI 场景，具体命令语法仍由当前安装的 CLI 决定。
 
-**它不是直接翻译 agent.go，而是保留其安全哲学和操作边界，把每个机制落地为 CLI 场景下可执行的等价方案。**
+**简单说：内置 Agent 提供领域与安全范式，官方 Kernel CLI 提供可执行语义，本项目提供面向外部 Agent 的适配层。**
+
+这里存在重要的强制能力差异：内置 Agent 在代码层执行确认、快照、输出控制和循环终止，而这份 CLI skill 是由宿主 AI Agent 遵循的策略。CLI 不会阻止 Agent 绕过这些说明；需要不可绕过控制的环境，必须另加命令包装器或执行策略层。
 
 ## 3. 安全性设计梳理
 
-因为 `siyuan` CLI 直接操作内核数据、无 UI 确认弹窗、无撤销功能，外部 agent 的危险程度远高于内置 agent。文档用四层机制兜底：
+因为 `siyuan` CLI 直接操作内核数据、无 UI 确认弹窗、无通用撤销功能，外部 agent 的危险程度远高于内置 agent。文档提供四层由宿主 agent 执行的策略保护：
 
-**第一层：快照兜底。** 用户确认操作计划后，第一执行步是打数据快照，改坏了可以 `repo checkout` 回滚。快照 ID 明确告知用户。
+**第一层：适用范围内的快照兜底。** 对 repository 覆盖的本地工作空间变更，确认后的第一执行步是创建并验证快照。快照不是通用撤销：它不能恢复云端收集箱原件、保证远端同步状态恢复或撤销覆盖范围外的变化；回滚本身也是高风险操作。
 
-**第二层：用户确认。** 发现阶段收集完所有信息后，列出完整操作清单（每个命令、目标 ID、预期结果），等用户说"确认"才动手。不搞静默写入。
+**第二层：任务 ID 绑定的写操作确认。** Agent 先发现准确目标，再以 `001` 这样的短序号展示变更内容、范围和重要后果；只有用户确认该 ID 后才执行。需求或计划发生变化时旧 ID 立即失效，并生成 `002` 等下一份计划。
 
-**第三层：逐个验证。** 每执行一步，立即用读命令回读确认结果，不依赖"零退出码=成功"。
+**第三层：逐个验证。** 每执行一步，立即使用适用的读取、状态、文件系统、进程或网络检查，不依赖"零退出码=成功"。
 
-**第四层：失败熔断。** 同一命令连续失败 3 次自动换方法，5 次终止，不会卡死循环。
+**第四层：基于证据的失败熔断。** 确定性错误不得原样重试；明确的暂时性错误最多重试 2 次。同一意图出现 3 个失败的纠正方向或累计 5 个失败调用时停止，并且只有获得新证据、状态变化或用户指示后才继续。
 
-**额外防线：** 规则写死"永不编造 ID、路径、block 类型"，所有标识符必须从实际工作空间发现，消除 AI 幻觉风险；所有思源返回内容视作不可信数据，防止 prompt 注入。
+**额外防线：** skill 要求 agent "永不编造 ID、路径、block 类型"，所有标识符必须从实际工作空间发现；所有思源返回内容视作不可信数据，以降低 prompt 注入风险。
 
 ## 4. 如何使用
 
@@ -45,10 +46,10 @@
 
 把这几个文件放在 AI 能访问到的同一目录里：
 
-| 文件                        | 作用                                         |
-| ------------------------- | ------------------------------------------ |
-| `SIYUAN-CLI-SKILLS.md`    | 主入口：强制规则、安全边界、领域模型、SOP、错误处理、报告格式           |
-| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：常见工作流、内容输入、调试、SQL、同步、导入导出、资产、数据库等场景细节 |
+| 文件                      | 作用                                                                      |
+| ------------------------- | ------------------------------------------------------------------------- |
+| `SIYUAN-CLI-SKILLS.md`    | 主入口：稳定安全规则、领域模型、SOP、错误处理和已验证的 CLI 特例          |
+| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：非显然工作流、内容规范、调试、SQL、同步、导入导出、资产和数据库 |
 
 然后在对话中说："请先阅读 `SIYUAN-CLI-SKILLS.md`，然后帮我搜索/创建/管理思源笔记。需要具体工作流时，再按主文档指引查阅 `SIYUAN-CLI-WORKFLOWS.md`。具体命令参数以实时 `siyuan <command> --help` 为准。"
 
@@ -77,7 +78,7 @@ siyuan <command> --help
 
 ### 必需依赖：思源 CLI
 
-这份 skill 依赖思源 3.7.0 及以上版本提供的内核 CLI。官方 CLI 说明见[Command-line Interface一节](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface)
+这份 skill 依赖思源 3.7.2 及以上版本提供的内核 CLI。官方 CLI 说明见[Command-line Interface一节](https://github.com/siyuan-note/siyuan#%EF%B8%8F-command-line-interface)
 
 根据官方说明，CLI 二进制是：
 
@@ -101,7 +102,7 @@ ln -s /path/to/SiYuan/resources/kernel/SiYuan-Kernel /usr/local/bin/siyuan
 siyuan --version
 ```
 
-如果提示 `command not found`，请先确认思源 3.7.0+ 已安装，并按照官方说明创建 symlink 或配置 `PATH`。如果不想配置 `PATH`，也可以在使用时把完整路径告诉 AI，例如：
+如果提示 `command not found`，请先确认思源 3.7.2+ 已安装，并按照官方说明创建 symlink 或配置 `PATH`。如果不想配置 `PATH`，也可以在使用时把完整路径告诉 AI，例如：
 
 ```text
 我的思源 CLI 路径是：/path/to/SiYuan/resources/kernel/SiYuan-Kernel
@@ -109,7 +110,7 @@ siyuan --version
 
 ### 推荐依赖：`jq`
 
-`jq` 是命令行 JSON 处理工具。思源 CLI 的 `--format json` 输出很多，AI agent 在提取 notebook ID、block ID、snapshot ID、数据库字段、搜索结果等信息时，用 `jq` 会比直接从整段 JSON 里人工判断更稳定。
+`jq` 是命令行 JSON 处理工具。对于已经确认会输出有效 JSON 的命令，AI Agent 在提取 notebook ID、block ID、数据库字段或搜索结果时，用 `jq` 会比直接解析大段输出更可靠。部分命令即使接受 `--format json`，仍会返回纯文本、原始内容或混合输出，因此使用 `jq` 前必须先检查该命令的实际输出。
 
 严格来说，`jq` 不是思源 CLI 的硬性依赖；但为了让这份 skill 更可靠，强烈建议安装。
 
@@ -182,14 +183,14 @@ jq --version
 
 ## 6. 按需定制
 
-文档的全部内容你都可以自由修改，适配自己的使用习惯。常见定制场景：
+定制时不能静默移除外部写入 Agent 的安全控制。更安全的方式包括：
 
-- **不想每次等确认**：删掉 SOP 第 11 步（展示计划等待确认）及规则 11 中的相关要求，AI 会在发现完后直接执行。
-- **不想要快照**：删掉规则 10 和 SOP 第 12 步，AI 会跳过快照直接操作。
-- **只想让 AI 读不能写**：删掉 Safety Level 2 和 Level 3 全部命令，AI 就只会做查询。
-- **添加自定义工作流**：在 `SIYUAN-CLI-WORKFLOWS.md` 的 Common workflows 章节追加你自己的固定操作模式。
+- **减少确认频率：** 使用独立 wrapper 对极窄范围操作做强制 allowlist；不要从通用写入 skill 中删除任务 ID 确认规则。
+- **判断快照适用性：** 评估本地快照能否保护计划中的变更。核心策略要求快照时必须创建并验证，不得选择跳过；快照不适用时，应在任务计划中说明恢复能力限制。
+- **只读 AI：** 在提示词之外强制命令 allowlist，排除所有写入、同步、回滚、导入、文件导出和服务启动操作。
+- **添加自定义工作流：** 只添加稳定领域知识或实时 help 无法揭示的行为，同时保留确认、失败即停、输出验证和主文档安全边界。
 
-文档都是 Markdown 文件，用任何编辑器改都可以。改完保存，下次 AI 读到的就是你的定制版。
+文档虽然都是 Markdown，但提示词不是不可绕过的安全边界。必须强制执行的控制应放在 wrapper 或执行策略层。
 
 ## 7. 跨平台使用说明
 
@@ -203,16 +204,16 @@ jq --version
 
 常见需要改写的地方：
 
-| POSIX bash/zsh        | Windows PowerShell                            |
-| --------------------- | --------------------------------------------- |
+| POSIX bash/zsh        | Windows PowerShell                             |
+| --------------------- | ---------------------------------------------- |
 | `$SIYUAN_WORKSPACE`   | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
-| `\` 换行续写              | 反引号 `` ` `` 换行续写                              |
+| `\` 换行续写          | 反引号 `` ` `` 换行续写                        |
 | `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@`            |
-| `mktemp`              | `[System.IO.Path]::GetTempFileName()`         |
-| `tail -n 200 file`    | `Get-Content file -Tail 200`                  |
-| `rm -f file`          | `Remove-Item -Force file`                     |
-| `$?` / `$status`      | `$LASTEXITCODE`                               |
-| `/absolute/path/...`  | `C:\...` 或 PowerShell 可识别路径                   |
+| `mktemp`              | `[System.IO.Path]::GetTempFileName()`          |
+| `tail -n 200 file`    | `Get-Content file -Tail 200`                   |
+| `rm -f file`          | `Remove-Item -Force file`                      |
+| `$?`                  | `$LASTEXITCODE`                                |
+| `/absolute/path/...`  | `C:\...` 或 PowerShell 可识别路径              |
 
 如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 是否在该 shell 的 `PATH` 中。
 
