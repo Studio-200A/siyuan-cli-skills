@@ -1,6 +1,6 @@
 [中文](README_CN.md) | English
 
-# SIYUAN-CLI-SKILLS — SiYuan Note AI Agent Operation Guide
+# SIYUAN-CLI-SKILLS — SiYuan AI Agent Operation Guide
 
 ![Image 1](assets/screenshot_en.png)
 
@@ -8,7 +8,7 @@
 
 **SIYUAN-CLI-SKILLS.md** is an AI Agent operating manual for the SiYuan CLI. Place it and its companion documents in a directory accessible to an AI assistant that can read the files and, with your authorization, execute the local `siyuan` CLI against the intended workspace (Claude Code, Cursor, CodeBuddy, etc.). The AI can then **search, read, create, edit, organize, import/export, snapshot-protect, and sync-manage** your SiYuan workspace where the corresponding account features and configuration are available.
 
-In short: it serves as a translator between SiYuan Note and external AI, teaching the AI how to safely operate your notes.
+In short: it serves as a translator between SiYuan and external AI, teaching the AI how to safely operate your notes.
 
 ## 2. Built on SiYuan's Agent Design Paradigm and Official Kernel CLI
 
@@ -46,10 +46,10 @@ Usage varies slightly across different AI tools, but the core operation is equal
 
 Place these files in the same directory accessible to your AI:
 
-| File                      | Purpose                                                                                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `SIYUAN-CLI-SKILLS.md`    | Main entry: stable safety rules, domain model, SOP, error handling, and tested CLI caveats                                                |
-| `SIYUAN-CLI-WORKFLOWS.md` | On-demand reference: non-obvious workflows, content conventions, debugging, SQL, sync, import/export, assets, and databases              |
+| File                      | Purpose                                                                                                                                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SIYUAN-CLI-SKILLS.md`    | Main entry: domain model, safety rules, operating procedure, and tested CLI caveats; not a static command reference                       |
+| `SIYUAN-CLI-WORKFLOWS.md` | On-demand reference: non-obvious workflows, content conventions, and a small number of illustrative shell-input patterns                 |
 
 Then say in the conversation: "Please read `SIYUAN-CLI-SKILLS.md` first, then help me search/create/manage SiYuan notes. When specific workflows are needed, refer to `SIYUAN-CLI-WORKFLOWS.md` as guided by the main document. For specific command parameters, always check real-time `siyuan <command> --help`."
 
@@ -74,6 +74,8 @@ siyuan <command> --help
 ```
 
 This explicitly guides the AI agent to prioritize obtaining the most accurate command usage patterns for the current version, reducing the risk of the AI inferring parameters from similar commands. `siyuan-cli-help-export.sh` is retained as an optional maintenance/audit tool for batch-exporting the current CLI's complete help information for manual inspection or temporary reference.
+
+The project intentionally maintains very few static command examples. Examples illustrate workflow or shell-input shape only; they are not syntax authorities and must be reconstructed from the installed command's live help before execution.
 
 ## 5. Dependencies
 
@@ -164,32 +166,32 @@ Customization must not silently remove safety controls from a write-capable exte
 
 All documents are Markdown files, but prompt text is not a non-bypassable security boundary. Use a wrapper or execution policy for controls that must be enforced.
 
-## 7. Cross-Platform Usage Notes
+## 7. Cross-Platform Shell Guidance
 
-The command examples in `SIYUAN-CLI-SKILLS.md` default to POSIX shell syntax, i.e., the bash/zsh conventions common on Linux/macOS. In other words, **the SiYuan CLI itself is cross-platform, but the shell examples in this skill document are POSIX-first, not a complete cross-platform command reference set**.
+The project intentionally contains only a few illustrative shell patterns, mainly in `SIYUAN-CLI-WORKFLOWS.md`. They use POSIX bash/zsh syntax. **SiYuan CLI command paths, flags, and domain semantics do not need platform translation; only the surrounding shell syntax does.**
 
-The SiYuan CLI can be used on Windows, macOS, and Linux; however, shell syntax varies across systems. Windows + PowerShell users are advised not to copy bash examples from the document directly, but instead ask the AI to rewrite commands for the current environment before execution.
+On Windows PowerShell, first inspect the exact command with live `siyuan <command> --help`, then reconstruct the invocation using PowerShell-native variables, argument passing, paths, stdin, pipelines, and exit-status handling. Do not mechanically transliterate a bash example or rename CLI flags.
 
 Recommended prompt:
 
-> Please read `SIYUAN-CLI-SKILLS.md` first. The command examples in this document default to Linux/macOS bash syntax. My environment is Windows + PowerShell. Before executing any commands, please rewrite them in PowerShell syntax, including variables, line continuations, pipelines, standard input, temporary files, paths, and error handling. Do not run bash syntax directly.
+> Read `SIYUAN-CLI-SKILLS.md` first. My environment is Windows PowerShell. Build every CLI invocation from the installed `siyuan <command> --help`; do not infer or translate flags from bash examples. Adapt only the shell layer, including variables, argument arrays, paths, here-strings, stdin, pipelines, and `$LASTEXITCODE`. Do not use `Invoke-Expression` or run POSIX heredoc and backslash-continuation syntax directly.
 
-Common areas requiring rewriting:
+Common shell adaptations:
 
-| POSIX bash/zsh        | Windows PowerShell                             |
-| --------------------- | ---------------------------------------------- |
-| `$SIYUAN_WORKSPACE`   | `$env:SIYUAN_WORKSPACE` or `$SIYUAN_WORKSPACE` |
-| `\` line continuation | Backtick `` ` `` line continuation             |
-| `cat <<'EOF' ... EOF` | PowerShell here-string: `@' ... '@`            |
-| `mktemp`              | `[System.IO.Path]::GetTempFileName()`          |
-| `tail -n 200 file`    | `Get-Content file -Tail 200`                   |
-| `rm -f file`          | `Remove-Item -Force file`                      |
-| `$?`                  | `$LASTEXITCODE`                                |
-| `/absolute/path/...`  | `C:\...` or PowerShell-recognized path         |
+| POSIX concept | PowerShell adaptation |
+| --- | --- |
+| Local shell variable | `$SIYUAN_WORKSPACE = 'C:\path\to\workspace'` |
+| Exported environment variable | `$env:NAME = 'value'` |
+| `\` command continuation | Prefer an argument array; avoid backticks where possible |
+| `cat <<'EOF' ... EOF` | Use a single-quoted here-string with `@'` and `'@` on separate lines, then pipe it to the native command |
+| Separate argv values | Build `$cliArgs = @(...)`, then run `& siyuan @cliArgs` |
+| POSIX absolute path | Use a PowerShell/Windows-recognized path such as `C:\...` |
+| Native-command status | Check `$LASTEXITCODE` |
+| Shell-injection safety | Never use `Invoke-Expression`; keep external values as separate arguments |
 
-If you use Git Bash, WSL, MSYS2, or other Unix-like shells on Windows, you can continue to reference the bash examples in the document, but you should still confirm that `siyuan` is in that shell's `PATH`.
+Input modes such as `--file -` must still be confirmed by live help for the exact command. If you use Git Bash, WSL, MSYS2, or another Unix-like shell on Windows, POSIX illustrations may apply, but verify that the CLI is installed and reachable in that environment.
 
-For CLI binary names and `jq` installation methods, see the Dependencies section above. If `siyuan --version` fails, verify your SiYuan version, CLI binary name, and `PATH` configuration before continuing with the AI.
+For CLI binary names and `jq` installation methods, see the Dependencies section above. If `siyuan --version` fails, verify the SiYuan version, executable name, and `PATH` before continuing.
 
 ## 8. Disclaimer
 

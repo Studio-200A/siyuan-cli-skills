@@ -46,10 +46,10 @@
 
 把这几个文件放在 AI 能访问到的同一目录里：
 
-| 文件                      | 作用                                                                      |
-| ------------------------- | ------------------------------------------------------------------------- |
-| `SIYUAN-CLI-SKILLS.md`    | 主入口：稳定安全规则、领域模型、SOP、错误处理和已验证的 CLI 特例          |
-| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：非显然工作流、内容规范、调试、SQL、同步、导入导出、资产和数据库 |
+| 文件                      | 作用                                                                                         |
+| ------------------------- | -------------------------------------------------------------------------------------------- |
+| `SIYUAN-CLI-SKILLS.md`    | 主入口：领域模型、安全规则、操作流程和已验证的 CLI 特例；不作为静态命令参考                 |
+| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：非显然工作流、内容规范和少量用于说明 shell 输入方式的示意性模式                   |
 
 然后在对话中说："请先阅读 `SIYUAN-CLI-SKILLS.md`，然后帮我搜索/创建/管理思源笔记。需要具体工作流时，再按主文档指引查阅 `SIYUAN-CLI-WORKFLOWS.md`。具体命令参数以实时 `siyuan <command> --help` 为准。"
 
@@ -73,6 +73,8 @@ siyuan <command> --help
 ```
 
 此举可明确指导AI Agent优先获取当前版本最准确的命令使用范式，并减少 AI 从相似命令中误推参数的风险。`siyuan-cli-help-export.sh` 作为可选维护/审计工具保留，用来批量导出当前 CLI 的完整帮助信息供人工检查或临时参考。
+
+本项目有意只保留极少量静态命令示例。示例仅用于说明工作流或 shell 输入方式，不是命令语法权威；执行前必须根据当前安装命令的实时 help 重新构造。
 
 ## 5. 依赖
 
@@ -163,32 +165,32 @@ jq --version
 
 文档虽然都是 Markdown，但提示词不是不可绕过的安全边界。必须强制执行的控制应放在 wrapper 或执行策略层。
 
-## 7. 跨平台使用说明
+## 7. 跨平台 Shell 指引
 
-`SIYUAN-CLI-SKILLS.md` 的命令示例默认采用 POSIX shell 语法，也就是 Linux/macOS 常见的 bash/zsh 写法。换句话说，**思源 CLI 本身是跨平台的，但这份 skill 文档里的 shell 示例是 POSIX-first，不是完整的跨平台命令示例集**。
+本项目有意只包含少量示意性 shell 模式，主要位于 `SIYUAN-CLI-WORKFLOWS.md`，并采用 POSIX bash/zsh 语法。**思源 CLI 的命令路径、flag 和领域语义不需要跨平台翻译；需要适配的只是外围 shell 语法。**
 
-思源 CLI 本身可以在 Windows、macOS、Linux 上使用；需要注意的是，不同系统的 shell 语法不同。Windows + PowerShell 用户不建议直接复制文档中的 bash 示例执行，而是让 AI 在执行任务前先根据当前环境改写命令。
+在 Windows PowerShell 中，应先通过实时 `siyuan <command> --help` 检查准确命令，再使用 PowerShell 原生变量、参数传递、路径、stdin、pipeline 和退出状态处理方式重新构造。不要机械转写 bash 示例，也不要改写 CLI flag 名称。
 
 推荐提示词：
 
-> 请先阅读 `SIYUAN-CLI-SKILLS.md`。这份文档中的命令示例默认是 Linux/macOS bash 语法。我的环境是 Windows + PowerShell，请在执行任何命令前，将涉及的命令改写为 PowerShell 语法，包括变量、换行续写、管道、标准输入、临时文件、路径和错误处理。不要直接执行 bash 写法。
+> 请先阅读 `SIYUAN-CLI-SKILLS.md`。我的环境是 Windows PowerShell。每条 CLI 调用都必须根据当前安装版本的 `siyuan <command> --help` 构造，不要从 bash 示例推断或翻译 flag。只适配 shell 层，包括变量、参数数组、路径、here-string、stdin、pipeline 和 `$LASTEXITCODE`。不要使用 `Invoke-Expression`，也不要直接运行 POSIX heredoc 或反斜杠续行语法。
 
-常见需要改写的地方：
+常见 shell 适配：
 
-| POSIX bash/zsh        | Windows PowerShell                             |
-| --------------------- | ---------------------------------------------- |
-| `$SIYUAN_WORKSPACE`   | `$env:SIYUAN_WORKSPACE` 或 `$SIYUAN_WORKSPACE` |
-| `\` 换行续写          | 反引号 `` ` `` 换行续写                        |
-| `cat <<'EOF' ... EOF` | PowerShell here-string：`@' ... '@`            |
-| `mktemp`              | `[System.IO.Path]::GetTempFileName()`          |
-| `tail -n 200 file`    | `Get-Content file -Tail 200`                   |
-| `rm -f file`          | `Remove-Item -Force file`                      |
-| `$?`                  | `$LASTEXITCODE`                                |
-| `/absolute/path/...`  | `C:\...` 或 PowerShell 可识别路径              |
+| POSIX 概念 | PowerShell 做法 |
+| --- | --- |
+| 本地 shell 变量 | `$SIYUAN_WORKSPACE = 'C:\path\to\workspace'` |
+| 导出的环境变量 | `$env:NAME = 'value'` |
+| `\` 命令续行 | 优先使用参数数组，尽量避免反引号续行 |
+| `cat <<'EOF' ... EOF` | 使用单引号 here-string，并将 `@'` 和 `'@` 分别独占一行，再通过 pipeline 输入 native command |
+| 分开传递 argv | 构造 `$cliArgs = @(...)`，再执行 `& siyuan @cliArgs` |
+| POSIX 绝对路径 | 使用 PowerShell/Windows 可识别路径，例如 `C:\...` |
+| native command 状态 | 检查 `$LASTEXITCODE` |
+| shell injection 防护 | 不使用 `Invoke-Expression`；外部值始终作为独立参数传入 |
 
-如果你在 Windows 上使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以继续参考文档中的 bash 示例，但仍需确认 `siyuan` 是否在该 shell 的 `PATH` 中。
+`--file -` 等输入方式仍必须通过具体命令的实时 help 确认。如果在 Windows 中使用 Git Bash、WSL、MSYS2 等类 Unix shell，可以参考 POSIX 示例，但仍应确认 CLI 已安装且在该环境中可访问。
 
-CLI 二进制名称和 `jq` 安装方式见上面的“依赖”章节。如果 `siyuan --version` 失败，请先确认思源版本、CLI 二进制名称和 `PATH` 配置，再让 AI 继续操作。
+CLI 二进制名称和 `jq` 安装方式见上面的“依赖”章节。如果 `siyuan --version` 失败，请检查思源版本、可执行文件名称和 `PATH` 后再继续。
 
 ## 8. 免责声明
 
