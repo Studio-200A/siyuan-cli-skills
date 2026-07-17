@@ -112,8 +112,9 @@ Use dedicated CLI domain commands for user data and recovery operations. Knowing
 
 SiYuan Kernel CLI 3.7.2 cannot directly read or modify content or files in an encrypted notebook, regardless of whether that notebook is locked or unlocked in the frontend. Treat this as a deterministic capability boundary: do not request the master password, retry after frontend unlock, use generic file commands as a bypass, or invent an HTTP workaround.
 
-Stop the task and explain the limitation in the user's language. For Chinese, say:
+Stop the task and explain the limitation in the user's language. For example:
 
+> The content is in an encrypted notebook. The SiYuan Kernel CLI can't read or modify encrypted notebook content directly—even if you've already unlocked it in the frontend. So I can't do this through the CLI; you'll need to handle it in the SiYuan frontend.
 > 目标内容位于加密笔记本中，SiYuan Kernel CLI 无法直接读取或修改加密笔记本内容，即使已在前端解锁也不支持。我无法通过当前 CLI 完成该操作，请你在 SiYuan 前端中处理。
 
 ### Daily notes
