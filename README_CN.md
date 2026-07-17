@@ -116,23 +116,11 @@ siyuan --version
 
 #### Windows
 
-如果你使用 WinGet：
+- WinGet: `winget install jqlang.jq`
 
-```powershell
-winget install jqlang.jq
-```
+- Chocolatey: `choco install jq`
 
-如果你使用 Chocolatey：
-
-```powershell
-choco install jq
-```
-
-如果你使用 Scoop：
-
-```powershell
-scoop install jq
-```
+- Scoop: `scoop install jq`
 
 安装后重新打开终端，检查：
 
@@ -142,11 +130,7 @@ jq --version
 
 #### macOS
 
-如果你使用 Homebrew：
-
-```bash
-brew install jq
-```
+- Homebrew: `brew install jq`
 
 检查：
 
@@ -156,24 +140,11 @@ jq --version
 
 #### Linux
 
-Debian / Ubuntu：
+- Debian / Ubuntu: `sudo apt update && sudo apt install jq`
 
-```bash
-sudo apt update
-sudo apt install jq
-```
+- Fedora / RHEL: `sudo dnf install jq`
 
-Fedora：
-
-```bash
-sudo dnf install jq
-```
-
-Arch Linux：
-
-```bash
-sudo pacman -S jq
-```
+- Arch Linux: `sudo pacman -S jq`
 
 检查：
 

@@ -9,6 +9,8 @@ tested_with: SiYuan Kernel CLI 3.7.2
 
 ## Purpose and authority
 
+SiYuan is a local-first, block-based personal knowledge management system. A workspace contains notebooks; each document is a root block whose content forms a structured block tree managed by the SiYuan kernel. The kernel also maintains indexes, references, history, snapshots, and synchronization state, so an external agent must not treat the workspace as an ordinary folder of Markdown files.
+
 Use the official `siyuan` CLI instead of editing SiYuan's internal files or inventing HTTP calls when an equivalent CLI command exists.
 
 This skill adapts the domain model and safety design of SiYuan's built-in agent for an external CLI agent. The installed CLI is authoritative for command names, flags, input modes, and usage. Before first use of a command in the current session, run:
@@ -89,6 +91,30 @@ Keep these path types distinct:
 | Asset path | Data-relative asset path such as `assets/image/example.png` |
 
 Flag names do not establish which path type a command expects. Read the exact live help and verify the destination before writing.
+
+An hPath is a mutable, title-based locator rather than object identity. Renaming or moving a document can change its own hPath and the hPaths of descendants, and a lookup may be ambiguous. Resolve an unambiguous current ID before mutation and re-resolve affected locations after structural changes.
+
+### Workspace layers
+
+This overview is conceptual and diagnostic only. The workspace layout is kernel-managed and is not an editing interface.
+
+| Layer | Operational meaning |
+| --- | --- |
+| `conf/` | Workspace settings and potentially sensitive configuration; not normal note content |
+| `data/` | Kernel-managed notebooks, documents, assets, templates, and related user data |
+| `repo/` | Local repository and snapshot state |
+| `history/` | Edit-history archives, distinct from repository snapshots |
+| `temp/` | Logs, runtime databases, indexes, caches, and temporary exports; not a note-editing interface |
+
+Use dedicated CLI domain commands for user data and recovery operations. Knowing where data is stored does not authorize reading sensitive configuration or mutating domain data, recovery stores, indexes, or caches through direct filesystem operations or generic file commands.
+
+### Encrypted notebooks
+
+SiYuan Kernel CLI 3.7.2 cannot directly read or modify content or files in an encrypted notebook, regardless of whether that notebook is locked or unlocked in the frontend. Treat this as a deterministic capability boundary: do not request the master password, retry after frontend unlock, use generic file commands as a bypass, or invent an HTTP workaround.
+
+Stop the task and explain the limitation in the user's language. For Chinese, say:
+
+> 目标内容位于加密笔记本中，SiYuan Kernel CLI 无法直接读取或修改加密笔记本内容，即使已在前端解锁也不支持。我无法通过当前 CLI 完成该操作，请你在 SiYuan 前端中处理。
 
 ### Daily notes
 

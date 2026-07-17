@@ -117,23 +117,11 @@ Strictly speaking, `jq` is not a hard dependency of the SiYuan CLI; however, it 
 
 #### Windows
 
-If using WinGet:
+- WinGet: `winget install jqlang.jq`
 
-```powershell
-winget install jqlang.jq
-```
+- Chocolatey: `choco install jq`
 
-If using Chocolatey:
-
-```powershell
-choco install jq
-```
-
-If using Scoop:
-
-```powershell
-scoop install jq
-```
+- Scoop: `scoop install jq`
 
 After installation, reopen your terminal and verify:
 
@@ -143,11 +131,7 @@ jq --version
 
 #### macOS
 
-If using Homebrew:
-
-```bash
-brew install jq
-```
+- Homebrew: `brew install jq`
 
 Verify:
 
@@ -157,24 +141,11 @@ jq --version
 
 #### Linux
 
-Debian / Ubuntu:
+- Debian / Ubuntu: `sudo apt update && sudo apt install jq`
 
-```bash
-sudo apt update
-sudo apt install jq
-```
+- Fedora / RHEL: `sudo dnf install jq`
 
-Fedora:
-
-```bash
-sudo dnf install jq
-```
-
-Arch Linux:
-
-```bash
-sudo pacman -S jq
-```
+- Arch Linux: `sudo pacman -S jq`
 
 Verify:
 
