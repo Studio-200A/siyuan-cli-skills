@@ -47,10 +47,10 @@ The built-in agent enforces confirmation and snapshots in code. This external sk
 
 A block is SiYuan's fundamental data unit. Every block has a unique ID. A document is a `NodeDocument` block and the root of its content tree.
 
-| Category | Typical block types | Children? |
-| --- | --- | --- |
-| Containers | document, blockquote, list, list item, super block, callout | Yes |
-| Leaves | heading, paragraph, code, math, table, HTML, media, widget, iframe, attribute view, query embed | No |
+| Category   | Typical block types                                                                             | Children? |
+| ---------- | ----------------------------------------------------------------------------------------------- | --------- |
+| Containers | document, blockquote, list, list item, super block, callout                                     | Yes       |
+| Leaves     | heading, paragraph, code, math, table, HTML, media, widget, iframe, attribute view, query embed | No        |
 
 Inspect actual block type and structure instead of assuming that this summary is exhaustive.
 
@@ -82,13 +82,13 @@ A list item must be a child of a list. To nest items, put an inner list inside t
 
 Keep these path types distinct:
 
-| Path type | Meaning |
-| --- | --- |
-| Workspace path | Absolute filesystem path selecting a workspace |
-| hPath | Human-readable, title-based document path |
-| Internal document path | SiYuan's ID-based internal document path |
-| Workspace-relative file path | Path used by generic workspace file commands |
-| Asset path | Data-relative asset path such as `assets/image/example.png` |
+| Path type                    | Meaning                                                     |
+| ---------------------------- | ----------------------------------------------------------- |
+| Workspace path               | Absolute filesystem path selecting a workspace              |
+| hPath                        | Human-readable, title-based document path                   |
+| Internal document path       | SiYuan's ID-based internal document path                    |
+| Workspace-relative file path | Path used by generic workspace file commands                |
+| Asset path                   | Data-relative asset path such as `assets/image/example.png` |
 
 Flag names do not establish which path type a command expects. Read the exact live help and verify the destination before writing.
 
@@ -98,13 +98,13 @@ An hPath is a mutable, title-based locator rather than object identity. Renaming
 
 This overview is conceptual and diagnostic only. The workspace layout is kernel-managed and is not an editing interface.
 
-| Layer | Operational meaning |
-| --- | --- |
-| `conf/` | Workspace settings and potentially sensitive configuration; not normal note content |
-| `data/` | Kernel-managed notebooks, documents, assets, templates, and related user data |
-| `repo/` | Local repository and snapshot state |
-| `history/` | Edit-history archives, distinct from repository snapshots |
-| `temp/` | Logs, runtime databases, indexes, caches, and temporary exports; not a note-editing interface |
+| Layer      | Operational meaning                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------- |
+| `conf/`    | Workspace settings and potentially sensitive configuration; not normal note content           |
+| `data/`    | Kernel-managed notebooks, documents, assets, templates, and related user data                 |
+| `repo/`    | Local repository and snapshot state                                                           |
+| `history/` | Edit-history archives, distinct from repository snapshots                                     |
+| `temp/`    | Logs, runtime databases, indexes, caches, and temporary exports; not a note-editing interface |
 
 Use dedicated CLI domain commands for user data and recovery operations. Knowing where data is stored does not authorize reading sensitive configuration or mutating domain data, recovery stores, indexes, or caches through direct filesystem operations or generic file commands.
 
@@ -115,6 +115,7 @@ SiYuan Kernel CLI 3.7.2 cannot directly read or modify content or files in an en
 Stop the task and explain the limitation in the user's language. For example:
 
 > The content is in an encrypted notebook. The SiYuan Kernel CLI can't read or modify encrypted notebook content directly—even if you've already unlocked it in the frontend. So I can't do this through the CLI; you'll need to handle it in the SiYuan frontend.
+>
 > 目标内容位于加密笔记本中，SiYuan Kernel CLI 无法直接读取或修改加密笔记本内容，即使已在前端解锁也不支持。我无法通过当前 CLI 完成该操作，请你在 SiYuan 前端中处理。
 
 ### Daily notes
@@ -173,10 +174,10 @@ A snapshot is a local recovery point, not a transaction or universal undo. It do
 
 ## Safety classification
 
-| Class | Typical operations | Required behavior |
-| --- | --- | --- |
-| Read | list, get, search, inspect, status, read-only SQL | Resolve workspace and execute; no routine confirmation |
-| Write | create, update, append, rename, move, attributes, database cells, templates, assets | Discover, explain, confirm, snapshot when applicable, execute, verify |
+| Class       | Typical operations                                                                  | Required behavior                                                         |
+| ----------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| Read        | list, get, search, inspect, status, read-only SQL                                   | Resolve workspace and execute; no routine confirmation                    |
+| Write       | create, update, append, rename, move, attributes, database cells, templates, assets | Discover, explain, confirm, snapshot when applicable, execute, verify     |
 | High impact | delete, broad import, inbox conversion, rollback, purge, sync, serve, batch changes | Confirm exact action and scope; state irreversible or remote consequences |
 
 Classify by actual side effect, not by command name or global flags. Generic file commands are read-only only when they are actually reading; they are never a substitute for domain commands.
@@ -201,20 +202,20 @@ Use document, block, notebook, attribute, database, template, history, repositor
 
 These implementation findings cannot be safely inferred from global help. Re-check them when the installed version differs.
 
-| Area | Tested behavior |
-| --- | --- |
-| Global format | Some commands ignore JSON format, return raw content, or append text after JSON. |
-| Global dry-run | Commands must implement it individually; `serve` ignores it and starts the server. |
-| hPath resolution | Several document/import paths silently fall back to notebook root when hPath is unresolved. Resolve non-root destinations first. |
-| Document duplicate | Stdout contains the source document ID, not the duplicate ID. Discover the new document from before/after state. |
-| Block update | It replaces one block but does not enforce one top-level input block; its dry-run does not validate the payload. |
-| Inbox conversion | Destination-path behavior does not reliably match help wording, and successful conversion may remove cloud originals. |
-| Database item add | A non-detached row requires a block ID despite help suggesting it can be generated. |
-| References | JSON output may have a human-readable count appended and therefore not be valid JSON as a whole. |
-| History | JSON listing omits item paths needed for recovery; history content is raw rather than JSON. |
-| Repository create | Snapshot creation reports its ID in plain text rather than JSON. |
-| Sync | Push/pull may print `ok` without propagating the transfer result; verify status and expected effects. |
-| Export | File exports may produce no stdout; `export sy` expects a complete output filename despite ambiguous usage text. |
+| Area               | Tested behavior                                                                                                                  |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Global format      | Some commands ignore JSON format, return raw content, or append text after JSON.                                                 |
+| Global dry-run     | Commands must implement it individually; `serve` ignores it and starts the server.                                               |
+| hPath resolution   | Several document/import paths silently fall back to notebook root when hPath is unresolved. Resolve non-root destinations first. |
+| Document duplicate | Stdout contains the source document ID, not the duplicate ID. Discover the new document from before/after state.                 |
+| Block update       | It replaces one block but does not enforce one top-level input block; its dry-run does not validate the payload.                 |
+| Inbox conversion   | Destination-path behavior does not reliably match help wording, and successful conversion may remove cloud originals.            |
+| Database item add  | A non-detached row requires a block ID despite help suggesting it can be generated.                                              |
+| References         | JSON output may have a human-readable count appended and therefore not be valid JSON as a whole.                                 |
+| History            | JSON listing omits item paths needed for recovery; history content is raw rather than JSON.                                      |
+| Repository create  | Snapshot creation reports its ID in plain text rather than JSON.                                                                 |
+| Sync               | Push/pull may print `ok` without propagating the transfer result; verify status and expected effects.                            |
+| Export             | File exports may produce no stdout; `export sy` expects a complete output filename despite ambiguous usage text.                 |
 
 Consult the matching workflow before relying on one of these caveats.
 
