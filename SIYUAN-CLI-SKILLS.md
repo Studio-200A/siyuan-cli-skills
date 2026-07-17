@@ -100,13 +100,15 @@ For diary, journal, daily-log, or today's-note requests, use the daily-note comm
 
 Listing, searching, reading, inspecting status, and read-only SQL normally need no confirmation. Ask first if the target or scope is ambiguous, the operation may disclose data to an external provider, or the user asked for a preview rather than execution.
 
+Here, read-only means no intended change to SiYuan user content or business state. CLI startup and queries may still update logs, configuration, caches, or index metadata; those incidental runtime writes do not turn an ordinary read into a confirmed mutation.
+
 ### Mutations
 
 Before a mutation:
 
 1. Discover the exact workspace, target, destination, and current state.
 2. Assign the plan a short sequential task ID within the conversation, such as `001`.
-3. State the intended change, scope, important consequences, and snapshot applicability in a concise numbered plan.
+3. State the operation type, user-recognizable workspace and targets, destination, content or value summary, batch count or scope, important consequences, and snapshot applicability in a concise numbered plan. Include stable IDs only when needed to distinguish otherwise ambiguous objects.
 4. Ask the user to confirm that exact ID, for example `确认001` in Chinese or `confirm 001` in English.
 5. Create one applicable snapshot before the first covered mutation.
 6. Execute narrowly and verify the resulting content, structure, or status.
@@ -115,14 +117,18 @@ Use a compact prompt in the user's language:
 
 ```text
 Task 001
-1. <target and change>
-2. <snapshot applicability, important consequence, and verification>
+1. <operation type and user-recognizable target; stable ID if needed>
+2. <content or value summary and batch count or scope>
+3. <snapshot applicability, important consequence, and verification>
+4. No other write operation is authorized by this task.
 
 Confirm this task? Reply `confirm 001`.
 To change it, reply with the revised requirement; the new plan will use Task 002.
 ```
 
 For Chinese, use `任务001` and require `确认001`. The confirmation response must be the requested token, apart from surrounding whitespace. A question, vague agreement, confirmation of an older ID, or a request to modify the plan is not approval.
+
+Plans should describe the user's notebooks, documents, blocks, databases, or other recognizable objects and the intended operation. Do not burden the user with internal `.sy` paths, full shell commands, or implementation-only parameters. Every write in a multi-step task must be represented by the confirmed scope; unlisted writes require a new task ID.
 
 If the user changes the requirement, target, scope, destination, order, or material consequence, invalidate the current task ID and present the complete revised plan under the next ID, such as `002`. Once a plan is executed, rejected, cancelled, or fails partway, its ID cannot authorize later writes. Several related writes may share one task ID when all are listed in that plan.
 
@@ -133,6 +139,8 @@ The task ID prevents a stale confirmation from being applied to a changed plan; 
 ### Snapshot boundary
 
 One snapshot is sufficient for the repository-covered mutations in one approved task. Create it after approval because snapshot creation itself changes repository metadata. Verify that snapshot creation succeeded before relying on it.
+
+By default, mutations to local SiYuan user content require that snapshot. Do not create a meaningless workspace snapshot solely for an operation that does not change local user content or whose relevant effects the snapshot cannot protect. In those cases, state in the task plan that the affected state has no snapshot recovery guarantee. When coverage is uncertain, do not claim protection.
 
 A snapshot is a local recovery point, not a transaction or universal undo. It does not restore deleted cloud inbox originals, remote sync state, purged repository/history data, external files, or process/network effects. Do not claim snapshot protection where coverage is unknown. Checkout and rollback are high-risk writes requiring their own task-ID confirmation.
 

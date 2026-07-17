@@ -205,6 +205,6 @@ CLI 3.7.2 may print `ok` without propagating the actual transfer result. Compare
 
 ### Serve
 
-Start the HTTP server only when explicitly requested; ordinary CLI work does not require it. Check current live help, use read-only mode when writes are unnecessary, provide the access-auth code through the host's secret mechanism, and avoid exposing it in arguments or logs.
+Start the HTTP server only when explicitly requested; ordinary CLI work does not require it. Check current live help and use read-only mode when writes are unnecessary. Prefer the source-supported `SIYUAN_ACCESS_AUTH_CODE` environment variable, supplied through the host's secret environment mechanism, instead of placing the access code in command arguments, generated scripts, plans, logs, or agent-visible output.
 
 CLI 3.7.2 ignores dry-run for `serve` and starts the server. Confirm the intended lifetime and stop the process when the task ends. Keep access local unless the user has explicitly arranged appropriate authenticated network exposure.
