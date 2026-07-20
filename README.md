@@ -77,6 +77,10 @@ This explicitly guides the AI agent to prioritize obtaining the most accurate co
 
 The project intentionally maintains very few static command examples. Examples illustrate workflow or shell-input shape only; they are not syntax authorities and must be reconstructed from the installed command's live help before execution.
 
+### Upstream Release Maintenance
+
+[`upstream-sync-checklist.md`](upstream-sync-checklist.md) is the maintainer framework for reviewing new SiYuan releases. It explains how to discover and classify current changes from the skill, live CLI, source diff, and upstream documentation without maintaining another static update list. Normal Agent operation does not require reading this file.
+
 ## 5. Dependencies
 
 ### Required Dependency: SiYuan CLI

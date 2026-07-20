@@ -76,6 +76,10 @@ siyuan <command> --help
 
 本项目有意只保留极少量静态命令示例。示例仅用于说明工作流或 shell 输入方式，不是命令语法权威；执行前必须根据当前安装命令的实时 help 重新构造。
 
+### 上游版本同步维护
+
+[`upstream-sync-checklist.md`](upstream-sync-checklist.md) 是维护者审查思源新版本时使用的英文框架。它指导维护者从当前 skill、实时 CLI、源码 diff 和上游文档中动态发现并分类变化，避免再维护一份容易过时的静态更新列表。正常的 Agent 操作不需要读取该文件。
+
 ## 5. 依赖
 
 ### 必需依赖：思源 CLI
