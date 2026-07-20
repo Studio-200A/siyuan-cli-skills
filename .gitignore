@@ -1,0 +1,123 @@
+# ===============================================
+# .gitignore Template
+# Purpose: ignore temporary files, logs, and OS-generated files that should not be version-controlled
+# ===============================================
+
+# -----------------------------------------------
+# macOS Specific Files
+# -----------------------------------------------
+# macOS directory metadata file
+.DS_Store
+# macOS localization file
+.localized
+# macOS resource fork metadata file
+.AppleDouble
+# macOS Launch Services override file
+.LSOverride
+
+# Match filenames starting with "Icon", e.g. Icon? (? is a carriage return)
+Icon?
+
+# Thumbnails
+# macOS resource fork files, typically hidden
+._*
+
+# Filesystem and Time Machine related files
+# macOS document revisions directory
+.DocumentRevisions-V100/
+# macOS filesystem events log directory
+.fseventsd/
+# macOS Spotlight index directory
+.Spotlight-V100/
+# macOS temporary items directory
+.TemporaryItems/
+# macOS Trash directory
+.Trashes/
+# macOS volume icon file
+.VolumeIcon.icns
+# macOS Time Machine backup exclusion marker
+.com.apple.timemachine.donotbackup
+
+# Directory potentially created by remote AFP shares
+# Apple Filing Protocol (AFP) disk file
+.apdisk
+
+# -----------------------------------------------
+# Windows Specific Files
+# -----------------------------------------------
+# Windows thumbnail cache
+Thumbs.db
+# Windows media thumbnail cache
+ehthumbs.db
+# Windows desktop configuration file (folder view settings)
+Desktop.ini
+# Windows Recycle Bin directory
+$RECYCLE.BIN/
+# Windows System Volume Information directory
+System Volume Information/
+
+# -----------------------------------------------
+# General Temporary & Backup Files
+# -----------------------------------------------
+# Vim/Emacs backup files
+*~
+# Generic backup files
+*.bak
+# Temporary files
+*.tmp
+# Temporary files
+*.temp
+# Vim swap file (crash recovery)
+*.swp
+# Vim swap file (crash recovery)
+*.swo
+# Emacs lock file
+.#*
+# Log files (if your configuration scripts generate logs and you don't want to track them)
+*.log
+
+# -----------------------------------------------
+# Editor / IDE Related (optional — uncomment as needed)
+# -----------------------------------------------
+# Repositories managing configuration files typically include editor settings.
+# Only uncomment these when you are certain the files are generated temporarily and should not be version-controlled.
+
+# Visual Studio Code workspace settings
+.vscode/
+# VS Code log files (commented out; uncomment to ignore)
+# .vscode/*.log
+# VS Code backup files (commented out; uncomment to ignore)
+# .vscode/*.bak
+# VS Code workspace files
+.vscode/*.code-workspace
+# VS Code recommended extensions file (commented out; uncomment to ignore)
+# .vscode/extensions.json
+
+# Atom editor config directory (commented out; uncomment to ignore)
+# .atom/
+# IntelliJ IDEA project files (commented out; uncomment to ignore)
+# .idea/
+# IntelliJ IDEA module files (commented out; uncomment to ignore)
+# *.iml
+# IntelliJ IDEA project files (commented out; uncomment to ignore)
+# *.ipr
+# IntelliJ IDEA workspace files (commented out; uncomment to ignore)
+# *.iws
+
+# GPT Codex generated files
+.codex/
+# KILO plugin directory
+.kilo/
+# Claude Code directory
+.claude/
+
+# -----------------------------------------------
+# Sensitive Information
+# -----------------------------------------------
+# Environment variable file (may contain secrets; strongly recommended to ignore)
+.env
+# Credentials file (if it exists and should not be public)
+credentials.json
+# Secrets file (if it exists and should not be public)
+secrets.yml
+# -----------------------------------------------
