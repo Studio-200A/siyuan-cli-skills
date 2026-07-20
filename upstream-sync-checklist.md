@@ -101,6 +101,7 @@ git diff --name-only "$OLD_TAG".."$NEW_TAG" -- kernel/cli kernel/model kernel/ut
 | Unverified beta behavior            | Keep out of stable skill policy                                |
 
 Reject additions that duplicate live help, enumerate drifting schemas, describe internal state machines, or implement host/runtime controls in prose.
+If a finding is correct but belongs to source research rather than external-Agent behavior, keep it out of the core skill; record it in the synchronization report only when it remains useful, otherwise discard it.
 
 | Update target                | Scope                                                                          |
 | ---------------------------- | ------------------------------------------------------------------------------ |
@@ -117,7 +118,8 @@ Reject additions that duplicate live help, enumerate drifting schemas, describe 
 - [ ] Confirm English and Chinese README policies remain equivalent.
 - [ ] Confirm no guidance encourages direct `.sy` or unsupported filesystem mutation.
 - [ ] Confirm no Go runtime implementation was recreated as a prose protocol.
+- [ ] If the update substantially increases document size or complexity, justify each addition by the external Agent behavior it changes.
 - [ ] Review the final diff for unrelated or duplicated content.
-- [ ] Record which final claims are runtime-tested, source-confirmed, or unverified.
+- [ ] Produce a concise synchronization report covering versions and test context, changed claims and their evidence levels, useful findings kept out of policy, and files changed.
 
 Synchronization is complete when the released CLI and current caveats have been tested, relevant design and observable behavior changes are reflected in the correct documents, version claims match their evidence, and runtime-only changes have not expanded the skill.
