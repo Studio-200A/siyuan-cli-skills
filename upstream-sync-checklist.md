@@ -33,8 +33,18 @@ Never update `tested_with` from source review alone.
 
 ## 1. Establish the Baseline and Inventory
 
-- [ ] Identify the previous tested release, target release tag, and exact commits.
-- [ ] Install the released CLI and verify its packaged version.
+Before any source review or document update, verify that the local CLI is current:
+
+- [ ] Run `siyuan --version` and parse the local version.
+- [ ] Query `https://api.github.com/repos/siyuan-note/siyuan/releases/latest` and read its `tag_name` as the latest stable release.
+- [ ] Normalize an optional leading `v` and compare the versions with semantic-version rules, not lexical string ordering.
+- [ ] If the local version is lower, stop the entire synchronization workflow. Report both versions and ask the user to update the local CLI before restarting.
+- [ ] If either version cannot be retrieved or parsed, stop because the current-release prerequisite cannot be verified.
+
+Only after this gate passes:
+
+- [ ] Use the latest stable release tag as the target release and record its exact commit.
+- [ ] Identify the previous tested release and its exact commit.
 - [ ] Record relevant test context, such as new versus upgraded workspace and optional feature state.
 - [ ] Keep beta findings separate from final-release claims.
 
