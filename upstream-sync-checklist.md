@@ -46,6 +46,7 @@ Only after this gate passes:
 - [ ] Use the latest stable release tag as the target release and record its exact commit.
 - [ ] Identify the previous tested release and its exact commit.
 - [ ] Record relevant test context, such as new versus upgraded workspace and optional feature state.
+- [ ] Use a disposable isolated workspace for mutation tests; never exercise release caveats by writing to user data.
 - [ ] Keep beta findings separate from final-release claims.
 
 Find current version-bound statements dynamically:
@@ -65,8 +66,8 @@ rg -n 'tested_with|compatibility|CLI [0-9]|SiYuan [0-9]' \
 - [ ] Compare root version/help output with the previous tested release.
 - [ ] Export and diff the recursive command tree with `siyuan-cli-help-export.sh`.
 - [ ] Discover changes to commands, flags, defaults, aliases, and input modes from that diff.
-- [ ] Re-run every behavior currently documented as a caveat in the skill.
-- [ ] Check observable output and exit status where the skill depends on discovery, chaining, mutation, or verification.
+- [ ] Re-run every documented caveat whose prerequisites are available; otherwise retain its prior version qualifier and record the evidence limitation.
+- [ ] For changed CLI paths, test success and failure output, exit status, and resulting state where these affect discovery, chaining, mutation, or verification.
 - [ ] Assign an evidence level to every retained or changed claim.
 
 Live help remains the syntax authority; do not copy it into a static command catalog.
@@ -82,6 +83,7 @@ git diff --name-only "$OLD_TAG".."$NEW_TAG" -- kernel/cli kernel/model kernel/ut
 ```
 
 - [ ] In `agent.go`, review changes to the system prompt, domain concepts, tool guidance, safety intent, privacy, and capability boundaries.
+- [ ] Follow changed Agent safety dependencies and tests when `agent.go` delegates effect classification, execution uncertainty, or snapshot scope.
 - [ ] Add an Agent feature only if the CLI exposes an equivalent operation or its principle changes decisions for existing CLI commands.
 - [ ] In CLI-related code, follow only changed call paths that can alter observable behavior, including changes below the handler.
 - [ ] Stop following a call path when it no longer affects an external Agent's decision or result.
@@ -118,8 +120,9 @@ If a finding is correct but belongs to source research rather than external-Agen
 - [ ] Confirm English and Chinese README policies remain equivalent.
 - [ ] Confirm no guidance encourages direct `.sy` or unsupported filesystem mutation.
 - [ ] Confirm no Go runtime implementation was recreated as a prose protocol.
+- [ ] Confirm that user confirmation and snapshot applicability remain independent decisions.
 - [ ] If the update substantially increases document size or complexity, justify each addition by the external Agent behavior it changes.
 - [ ] Review the final diff for unrelated or duplicated content.
 - [ ] Produce a concise synchronization report covering versions and test context, changed claims and their evidence levels, useful findings kept out of policy, and files changed.
 
-Synchronization is complete when the released CLI and current caveats have been tested, relevant design and observable behavior changes are reflected in the correct documents, version claims match their evidence, and runtime-only changes have not expanded the skill.
+Synchronization is complete when the released CLI and available caveats have been tested, unavailable cases retain honest evidence and version qualifiers, relevant design and observable behavior changes are reflected in the correct documents, and runtime-only changes have not expanded the skill.

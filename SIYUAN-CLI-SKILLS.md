@@ -2,7 +2,7 @@
 name: siyuan-cli
 description: Operate SiYuan workspaces through the official SiYuan Kernel CLI. Use this skill for searching, reading, creating, editing, organizing, importing, exporting, snapshotting, synchronizing, and inspecting SiYuan data from an AI or terminal agent.
 compatibility: SiYuan Kernel CLI 3.7.2 or later; live command help always takes precedence
-tested_with: SiYuan Kernel CLI 3.7.2
+tested_with: SiYuan Kernel CLI 3.7.3
 ---
 
 # SiYuan CLI Skill
@@ -76,9 +76,10 @@ A list item must be a child of a list. To nest items, put an inner list inside t
 
 - A notebook is a top-level document container.
 - A document ID is also its root block ID.
-- Renaming changes the title and hPath, not the block ID.
+- Renaming an ordinary document changes the title and hPath, not the block ID.
 - A document move relocates the document subtree; a block move repositions one content block.
 - A document rename is neither a move nor a content replacement.
+- In 3.7.3, an optional top-level notebook document shares the notebook ID, uses hPath `/`, and acts as the virtual parent of root documents. Do not assume notebook and document IDs are disjoint; treat a notebook ID as a document target only when an exact CLI document lookup resolves it. This special document cannot be moved or deleted, and renaming it renames the notebook.
 
 Keep these path types distinct:
 
@@ -108,9 +109,11 @@ This overview is conceptual and diagnostic only. The workspace layout is kernel-
 
 Use dedicated CLI domain commands for user data and recovery operations. Knowing where data is stored does not authorize reading sensitive configuration or mutating domain data, recovery stores, indexes, or caches through direct filesystem operations or generic file commands.
 
+The `temp/` directory is not a confidentiality boundary. Inspect only task-relevant files, never disclose unrelated temporary content, and do not treat notebook locking as proof that every temporary plaintext export was securely erased.
+
 ### Encrypted notebooks
 
-SiYuan Kernel CLI 3.7.2 cannot directly read or modify content or files in an encrypted notebook, regardless of whether that notebook is locked or unlocked in the frontend. Treat this as a deterministic capability boundary: do not request the master password, retry after frontend unlock, use generic file commands as a bypass, or invent an HTTP workaround.
+In tested SiYuan Kernel CLI versions through 3.7.3, the CLI cannot directly read or modify content or files in an encrypted notebook, regardless of whether that notebook is locked or unlocked in the frontend. Treat this as a deterministic capability boundary for the installed behavior: do not request the master password, retry after frontend unlock, use generic file commands as a bypass, or invent an HTTP workaround.
 
 Stop the task and explain the limitation in the user's language. For example:
 
@@ -126,7 +129,7 @@ For diary, journal, daily-log, or today's-note requests, use the daily-note comm
 
 ### Read-only operations
 
-Listing, searching, reading, inspecting status, and read-only SQL normally need no confirmation. Ask first if the target or scope is ambiguous, the operation may disclose data to an external provider, or the user asked for a preview rather than execution.
+Listing, searching, reading, inspecting status, and read-only SQL normally need no confirmation. Ask first if the target or scope is ambiguous, the operation may disclose data to an external provider or incur external cost, or the user asked for a preview rather than execution.
 
 Here, read-only means no intended change to SiYuan user content or business state. CLI startup and queries may still update logs, configuration, caches, or index metadata; those incidental runtime writes do not turn an ordinary read into a confirmed mutation.
 
@@ -160,7 +163,7 @@ Plans should describe the user's notebooks, documents, blocks, databases, or oth
 
 If the user changes the requirement, target, scope, destination, order, or material consequence, invalidate the current task ID and present the complete revised plan under the next ID, such as `002`. Once a plan is executed, rejected, cancelled, or fails partway, its ID cannot authorize later writes. Several related writes may share one task ID when all are listed in that plan.
 
-After a command failure, read-only diagnosis may continue. An evidence-backed retry may retain the current task ID only when verification shows that no mutation occurred and the confirmed plan remains unchanged. If a mutation occurred or may have occurred, invalidate the task ID; any further mutation, correction, or recovery requires a revised plan and newly confirmed ID.
+After a command failure, read-only diagnosis may continue. An evidence-backed retry may retain the current task ID only when verification shows that no mutation occurred and the confirmed plan remains unchanged. A timeout, cancellation, killed process, or lost response after command start is an unknown outcome: do not retry automatically; inspect current state through read-only verification first. If a mutation occurred or may have occurred, invalidate the task ID; any further mutation, correction, or recovery requires a revised plan and newly confirmed ID.
 
 The task ID prevents a stale confirmation from being applied to a changed plan; it is not authentication or a cryptographic security boundary. Environments that need stronger authorization must implement it outside the prompt. Re-read a target before a destructive or structural write when concurrent changes are plausible.
 
@@ -180,7 +183,7 @@ A snapshot is a local recovery point, not a transaction or universal undo. It do
 | Write       | create, update, append, rename, move, attributes, database cells, templates, assets | Discover, explain, confirm, snapshot when applicable, execute, verify     |
 | High impact | delete, broad import, inbox conversion, rollback, purge, sync, serve, batch changes | Confirm exact action and scope; state irreversible or remote consequences |
 
-Classify by actual side effect, not by command name or global flags. Generic file commands are read-only only when they are actually reading; they are never a substitute for domain commands.
+Classify by actual side effect, not by command name or global flags. A nominal read that discloses data or incurs external cost requires informed confirmation even when no local snapshot is useful. Generic file commands are read-only only when they are actually reading; they are never a substitute for domain commands.
 
 ## Output and input handling
 
@@ -198,24 +201,24 @@ SiYuan `.sy` files are private structured storage, not an editing API. Never cre
 
 Use document, block, notebook, attribute, database, template, history, repository, and other dedicated commands. If no safe command exists, report the limitation rather than editing internals.
 
-## Tested CLI 3.7.2 caveats
+## Tested CLI caveats through 3.7.3
 
 These implementation findings cannot be safely inferred from global help. Re-check them when the installed version differs.
 
-| Area               | Tested behavior                                                                                                                  |
-| ------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
-| Global format      | Some commands ignore JSON format, return raw content, or append text after JSON.                                                 |
-| Global dry-run     | Commands must implement it individually; `serve` ignores it and starts the server.                                               |
-| hPath resolution   | Several document/import paths silently fall back to notebook root when hPath is unresolved. Resolve non-root destinations first. |
-| Document duplicate | Stdout contains the source document ID, not the duplicate ID. Discover the new document from before/after state.                 |
-| Block update       | It replaces one block but does not enforce one top-level input block; its dry-run does not validate the payload.                 |
-| Inbox conversion   | Destination-path behavior does not reliably match help wording, and successful conversion may remove cloud originals.            |
-| Database item add  | A non-detached row requires a block ID despite help suggesting it can be generated.                                              |
-| References         | JSON output may have a human-readable count appended and therefore not be valid JSON as a whole.                                 |
-| History            | JSON listing omits item paths needed for recovery; history content is raw rather than JSON.                                      |
-| Repository create  | Snapshot creation reports its ID in plain text rather than JSON.                                                                 |
-| Sync               | Push/pull may print `ok` without propagating the transfer result; verify status and expected effects.                            |
-| Export             | File exports may produce no stdout; `export sy` expects a complete output filename despite ambiguous usage text.                 |
+| Area               | Tested behavior                                                                                                                               |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Global format      | Some commands ignore JSON format, return raw content, or append text after JSON.                                                              |
+| Global dry-run     | Commands must implement it individually; `serve` ignores it and starts the server.                                                            |
+| hPath resolution   | Several document/import paths silently fall back to notebook root when hPath is unresolved. Resolve non-root destinations first.              |
+| Document duplicate | In 3.7.3, stdout contains the new duplicate ID; fetch that ID and verify the duplicate before chaining another operation.                     |
+| Block update       | In 3.7.3, extra top-level input blocks may be silently dropped; its dry-run does not validate the payload.                                    |
+| Inbox conversion   | Destination-path behavior does not reliably match help wording, and successful conversion may remove cloud originals.                         |
+| Database item add  | A non-detached row requires a block ID despite help suggesting it can be generated.                                                           |
+| References         | In 3.7.3, JSON output may have a human-readable count appended and therefore not be valid JSON as a whole.                                    |
+| History            | JSON listing omits item paths needed for recovery; history content is raw rather than JSON.                                                   |
+| Repository create  | In 3.7.3, snapshot creation reports `created snapshot <id>` as plain text rather than JSON.                                                   |
+| Sync               | Push/pull may print `ok` without propagating the transfer result; verify status and expected effects.                                         |
+| Export             | In 3.7.3 testing, `export sy` returned an HTTP-style path; `--output` read it as a local path and failed, and the archive was not importable. |
 
 Consult the matching workflow before relying on one of these caveats.
 

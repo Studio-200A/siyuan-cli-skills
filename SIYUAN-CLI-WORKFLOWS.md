@@ -39,7 +39,7 @@ Pass external values as separately quoted arguments. Never use `eval`, `sh -c`, 
 | Work with databases | inspect database, keys, view, item IDs, and value shape before mutation |
 | Process inbox | list summaries, fetch full item, then separately confirm conversion |
 
-Do not use block attributes to set notebook icons. A document-block icon and a notebook icon are different targets. Do not invoke an all-notebook randomization when only one notebook is intended.
+Do not use ordinary document-block attributes to set notebook icons. In 3.7.3, the optional top-level notebook document is the exception because it shares the notebook ID and its icon is coupled to the notebook icon. Do not invoke an all-notebook randomization when only one notebook is intended.
 
 In the tested CLI, semantic search is part of the search command rather than a standalone `semantic` command. Check current search help for its method value. Before using an external embedding provider, disclose whether the query or note-derived data leaves the local environment.
 
@@ -109,7 +109,7 @@ Use pagination and narrow filters for search, history, repository, database, and
 
 Choose document search when finding a document by title and full-text search when finding content or blocks. Fetch the selected object after search rather than answering from a summary row. Use structured get output for metadata and block Kramdown when the actual Markdown content is needed.
 
-Do not assume that a global JSON flag makes raw-content commands return JSON. In CLI 3.7.2, block Kramdown is raw text.
+Do not assume that a global JSON flag makes raw-content commands return JSON. In CLI 3.7.3, block Kramdown is raw text.
 
 ### Process inbox items
 
@@ -123,15 +123,15 @@ CLI 3.7.2 destination-path behavior does not reliably match the conversion help 
 
 For creation, discover the notebook and parent location, check live help for the command's actual path and content inputs, create the document, capture the observed result, then fetch the document and content to verify it.
 
-CLI 3.7.2 document creation prints the new ID as plain text even when JSON format is requested.
+CLI 3.7.3 document creation prints the new ID as plain text even when JSON format is requested.
 
-For duplication, record the source's parent and candidate siblings before execution. CLI 3.7.2 prints the source ID, not the duplicate ID. Discover the duplicate from the before/after document state and verify exactly one plausible new document before using it in another step.
+For duplication, record the source's parent and candidate siblings before execution. CLI 3.7.3 prints the new duplicate ID as plain text even when JSON format is requested. Fetch that ID and verify the duplicate before using it in another step.
 
 ### Update one block
 
 Read the target content, breadcrumb, and parent's child order. Use block update only to replace one existing block. To add content, use append, prepend, or insert instead.
 
-CLI 3.7.2 does not enforce that update input contains only one top-level block, and its dry-run returns before parsing the payload. Keep update input deliberately single-block. If the content may parse into several top-level blocks, use an insertion workflow or a trusted SiYuan-compatible parser. After update, re-read both content and sibling order.
+CLI 3.7.3 does not reject update input containing several top-level blocks and may silently keep only the first; its dry-run returns before parsing the payload. Keep update input deliberately single-block. If the content may parse into several top-level blocks, use an insertion workflow or a trusted SiYuan-compatible parser. After update, re-read both content and sibling order.
 
 ### Insert below a heading
 
@@ -145,7 +145,7 @@ Use the daily-note command family, not ordinary document creation. Resolve or cr
 
 Read current attributes before changing them. Follow live help for the current attribute-input syntax. A title image uses SiYuan's CSS `background-image` form rather than a bare asset path.
 
-Changing a document block's icon does not change a notebook icon. Use the notebook command family for notebook icons and keep randomization scoped to the intended notebook.
+Changing an ordinary document block's icon does not change a notebook icon. In 3.7.3, the optional top-level notebook document shares the notebook ID, and changing its icon also changes the notebook icon. Verify that an exact CLI document lookup resolves the notebook ID before treating it as this special document; otherwise use the notebook command family and keep randomization scoped to the intended notebook.
 
 ### Databases
 
@@ -157,7 +157,9 @@ In CLI 3.7.2, adding a non-detached row requires a block ID even though help sug
 
 Confirm the source, format, and destination before writing an external file. Avoid silently overwriting an existing file; a repository snapshot cannot restore it.
 
-CLI 3.7.2 file exports may produce no stdout, and some paths may suppress an underlying error. Verify the resulting regular file and its expected format/content. For `.sy.zip` export, provide a complete output filename rather than a directory despite ambiguous usage text.
+CLI 3.7.2 file exports may produce no stdout, and some paths may suppress an underlying error. Verify the resulting regular file and its expected format/content.
+
+In CLI 3.7.3 testing, `export sy` without `--output` returned an HTTP-style `/export/...` path, while `--output` attempted to read that path as a local absolute path and failed. The temporary flat archive contained only rendered text and omitted its database definition; separately, `import sy` rejected its layout as invalid because it lacked the required top-level directory. Do not rely on this CLI path for native backup or transfer; report the limitation instead of recovering the temporary file through generic file operations.
 
 ### Import
 
@@ -167,7 +169,7 @@ For an explicitly intended notebook-root import, use the root path form document
 
 ### References
 
-Use backlinks and mentions as reads. In CLI 3.7.2, their JSON output appends a human-readable count, so the complete stdout is not valid JSON. Use table output or handle the observed mixed format. Refresh references only when explicitly requested or required by a verified workflow.
+Use backlinks and mentions as reads. In CLI 3.7.3, their JSON output appends a human-readable count, so the complete stdout is not valid JSON. Use table output or handle the observed mixed format. Refresh references only when explicitly requested or required by a verified workflow.
 
 ### History and recovery
 
@@ -177,7 +179,7 @@ Rollback requires verification of the exact history entry and current target, an
 
 ### Repository snapshots
 
-For covered workspace mutations, create one snapshot after approval and before the first write. CLI 3.7.2 reports `created snapshot <id>` as plain text; verify that the snapshot exists before relying on it.
+For covered workspace mutations, create one snapshot after approval and before the first write. CLI 3.7.3 reports `created snapshot <id>` as plain text; verify that the snapshot exists before relying on it.
 
 Repository checkout, purge, and file rollback are high impact. A snapshot cannot protect repository data from purge, and local recovery does not automatically reconcile remote sync state.
 
@@ -194,6 +196,8 @@ Use generic file commands for logs, debugging, and explicitly requested non-inte
 ### SQL
 
 Use SQL only when higher-level read commands cannot answer the question efficiently. Execute one clearly read-only query with a bounded result. Never attempt write or schema statements, even with user approval; use domain commands for mutations.
+
+CLI 3.7.3 accepts one `SELECT` or `WITH` query and rejects other forms such as `PRAGMA`, `ATTACH`, `DETACH`, and transaction-control statements even when they appear read-only.
 
 The CLI has no parameter-binding interface. Do not interpolate untrusted text into SQL literals. Prefer search or a domain command for dynamic user-provided values, and verify schema names instead of guessing them.
 

@@ -15,7 +15,7 @@
 本项目区分三个设计与适配层：
 
 - **Agent 设计范式：** 参考思源内置 [`kernel/agent/agent.go`](https://github.com/siyuan-note/siyuan/blob/master/kernel/agent/agent.go) 的整体 system prompt 与安全意图，包括 block 树领域模型、专用领域工具、读写区分、写前确认、恢复快照、不可信工具输出、失败即停和防止无进展循环。文档不会用自然语言复现 `safeActions`、确认通道或 doom-loop tracker 等 runtime 机制。
-- **CLI 执行语义：** 当前安装版本的实时 help 决定命令路径、参数和输入方式。对于实时 help 无法揭示或描述不准确的少量行为，本项目通过思源 CLI 3.7.2、官方 [`kernel/cli/cmd`](https://github.com/siyuan-note/siyuan/tree/master/kernel/cli/cmd) 实现和实际输出进行核对，并记录为带版本限定的 caveat。
+- **CLI 执行语义：** 当前安装版本的实时 help 决定命令路径、参数和输入方式。对于实时 help 无法揭示或描述不准确的少量行为，本项目通过思源 CLI 3.7.3、官方 [`kernel/cli/cmd`](https://github.com/siyuan-note/siyuan/tree/master/kernel/cli/cmd) 实现和实际输出进行核对，并记录为带版本限定的 caveat。
 - **外部 Agent 适配：** 使用任务 ID 承接内置 UI 确认，以每个已确认任务的一次适用快照承接恢复点意图，并通过基于证据的重试预算防止无进展循环。这些规则保留了内置设计意图，而不是在 Markdown 中重新实现 Go runtime。
 
 内置 Agent 的 GUI 和工具行为不会被机械照搬。本项目只将适用的设计原则带入外部 CLI 场景，具体命令语法仍由当前安装的 CLI 决定。
