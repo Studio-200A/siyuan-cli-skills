@@ -21,7 +21,7 @@ siyuan <command> --help
 
 Do not copy flags from a similar command. This document records stable operating principles and a small number of tested implementation behaviors that live help does not reveal. If installed behavior differs, stop guessing, inspect the installed version, and report the incompatibility.
 
-Read `SIYUAN-CLI-WORKFLOWS.md` only when a matching workflow or SiYuan-specific formatting rule is needed.
+Read `WORKFLOW.md` only when a matching workflow or SiYuan-specific formatting rule is needed.
 
 ## Core rules
 

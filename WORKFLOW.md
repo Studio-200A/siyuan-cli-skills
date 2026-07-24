@@ -1,6 +1,6 @@
 # SiYuan CLI Workflows
 
-Read `SIYUAN-CLI-SKILLS.md` first. This file contains only SiYuan-specific workflows, content conventions, and tested behaviors that are not reliably derived from ordinary command help.
+Read `SKILL.md` first. This file contains only SiYuan-specific workflows, content conventions, and tested behaviors that are not reliably derived from ordinary command help.
 
 Every command example is illustrative. Before execution, run the exact `siyuan <command> --help` and adapt to the installed version. Mutation examples inherit the main skill's discovery, task-ID confirmation, applicable snapshot, fail-stop, retry-budget, and verification rules.
 

@@ -6,7 +6,7 @@
 
 ## 1. What It Is and What It Does
 
-**SIYUAN-CLI-SKILLS.md** is an AI Agent operating manual for the SiYuan CLI. Place it and its companion documents in a directory accessible to an AI assistant that can read the files and, with your authorization, execute the local `siyuan` CLI against the intended workspace (Claude Code, Cursor, CodeBuddy, etc.). The AI can then **search, read, create, edit, organize, import/export, snapshot-protect, and sync-manage** your SiYuan workspace where the corresponding account features and configuration are available.
+**SKILL.md** is an AI Agent operating manual for the SiYuan CLI. Place it and its companion documents in a directory accessible to an AI assistant that can read the files and, with your authorization, execute the local `siyuan` CLI against the intended workspace (Claude Code, Cursor, CodeBuddy, etc.). The AI can then **search, read, create, edit, organize, import/export, snapshot-protect, and sync-manage** your SiYuan workspace where the corresponding account features and configuration are available.
 
 In short: it serves as a translator between SiYuan and external AI, teaching the AI how to safely operate your notes.
 
@@ -46,20 +46,20 @@ Usage varies slightly across different AI tools, but the core operation is equal
 
 Place these files in the same directory accessible to your AI:
 
-| File                      | Purpose                                                                                                                                    |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `SIYUAN-CLI-SKILLS.md`    | Main entry: domain model, safety rules, operating procedure, and tested CLI caveats; not a static command reference                       |
-| `SIYUAN-CLI-WORKFLOWS.md` | On-demand reference: non-obvious workflows, content conventions, and a small number of illustrative shell-input patterns                 |
+| File | Purpose |
+| --- | --- |
+| `SKILL.md` | Main entry: domain model, safety rules, operating procedure, and tested CLI caveats; not a static command reference |
+| `WORKFLOW.md` | On-demand reference: non-obvious workflows, content conventions, and a small number of illustrative shell-input patterns |
 
-Then say in the conversation: "Please read `SIYUAN-CLI-SKILLS.md` first, then help me search/create/manage SiYuan notes. When specific workflows are needed, refer to `SIYUAN-CLI-WORKFLOWS.md` as guided by the main document. For specific command parameters, always check real-time `siyuan <command> --help`."
+Then say in the conversation: "Please read `SKILL.md` first, then help me search/create/manage SiYuan notes. When specific workflows are needed, refer to `WORKFLOW.md` as guided by the main document. For specific command parameters, always check real-time `siyuan <command> --help`."
 
 For first-time use, you can guide the AI like this:
 
 ```
-Please read /path/to/SIYUAN-CLI-SKILLS.md, then check the siyuan CLI
+Please read /path/to/SKILL.md, then check the siyuan CLI
 version on my machine, list registered workspaces, and give me an overall
 introduction. When specific workflows or scenario examples are needed,
-refer to SIYUAN-CLI-WORKFLOWS.md in the same directory.
+refer to WORKFLOW.md in the same directory.
 For specific command parameters, always run siyuan <command> --help in real time.
 ```
 
@@ -172,13 +172,13 @@ All documents are Markdown files, but prompt text is not a non-bypassable securi
 
 ## 7. Cross-Platform Shell Guidance
 
-The project intentionally contains only a few illustrative shell patterns, mainly in `SIYUAN-CLI-WORKFLOWS.md`. They use POSIX bash/zsh syntax. **SiYuan CLI command paths, flags, and domain semantics do not need platform translation; only the surrounding shell syntax does.**
+The project intentionally contains only a few illustrative shell patterns, mainly in `WORKFLOW.md`. They use POSIX bash/zsh syntax. **SiYuan CLI command paths, flags, and domain semantics do not need platform translation; only the surrounding shell syntax does.**
 
 On Windows PowerShell, first inspect the exact command with live `siyuan <command> --help`, then reconstruct the invocation using PowerShell-native variables, argument passing, paths, stdin, pipelines, and exit-status handling. Do not mechanically transliterate a bash example or rename CLI flags.
 
 Recommended prompt:
 
-> Read `SIYUAN-CLI-SKILLS.md` first. My environment is Windows PowerShell. Build every CLI invocation from the installed `siyuan <command> --help`; do not infer or translate flags from bash examples. Adapt only the shell layer, including variables, argument arrays, paths, here-strings, stdin, pipelines, and `$LASTEXITCODE`. Do not use `Invoke-Expression` or run POSIX heredoc and backslash-continuation syntax directly.
+> Read `SKILL.md` first. My environment is Windows PowerShell. Build every CLI invocation from the installed `siyuan <command> --help`; do not infer or translate flags from bash examples. Adapt only the shell layer, including variables, argument arrays, paths, here-strings, stdin, pipelines, and `$LASTEXITCODE`. Do not use `Invoke-Expression` or run POSIX heredoc and backslash-continuation syntax directly.
 
 Common shell adaptations:
 

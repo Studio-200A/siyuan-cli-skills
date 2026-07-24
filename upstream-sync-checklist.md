@@ -17,7 +17,7 @@ If not, do not add it to the skill.
 Read the current truth from:
 
 - The installed released CLI and live help.
-- `SIYUAN-CLI-SKILLS.md`, `SIYUAN-CLI-WORKFLOWS.md`, and both READMEs.
+- `SKILL.md`, `WORKFLOW.md`, and both READMEs.
 - The old and new upstream release tags.
 - `kernel/agent/agent.go`, changed CLI call paths, release notes, and changed upstream `docs/` files.
 
@@ -53,7 +53,7 @@ Find current version-bound statements dynamically:
 
 ```bash
 rg -n 'tested_with|compatibility|CLI [0-9]|SiYuan [0-9]' \
-  SIYUAN-CLI-SKILLS.md SIYUAN-CLI-WORKFLOWS.md README.md README_CN.md
+  SKILL.md WORKFLOW.md README.md README_CN.md
 ```
 
 - [ ] Review each result and extract current caveats directly from the core documents.
@@ -107,8 +107,8 @@ If a finding is correct but belongs to source research rather than external-Agen
 
 | Update target                | Scope                                                                          |
 | ---------------------------- | ------------------------------------------------------------------------------ |
-| `SIYUAN-CLI-SKILLS.md`       | Stable domain, safety, version, path, recovery, or capability rules            |
-| `SIYUAN-CLI-WORKFLOWS.md`    | Non-obvious workflows and confirmed caveats                                    |
+| `SKILL.md`                    | Stable domain, safety, version, path, recovery, or capability rules            |
+| `WORKFLOW.md`                 | Non-obvious workflows and confirmed caveats                                    |
 | `README.md` / `README_CN.md` | Compatibility, setup, architecture, dependencies, and user-facing capabilities |
 | This checklist               | Synchronization method changes only                                            |
 

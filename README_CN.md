@@ -6,7 +6,7 @@
 
 ## 1. 它是什么，干什么用
 
-**SIYUAN-CLI-SKILLS.md** 是一份 AI Agent 的思源 CLI 操作说明书。将它和配套辅助文档提供给能够读取这些文件，并可在你授权后执行本地 `siyuan` CLI、访问目标工作空间的 AI 助手（Claude Code、Cursor、CodeBuddy 等），在相应账户功能和配置可用时，这个 AI 就能帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**思源工作空间。
+**SKILL.md** 是一份 AI Agent 的思源 CLI 操作说明书。将它和配套辅助文档提供给能够读取这些文件，并可在你授权后执行本地 `siyuan` CLI、访问目标工作空间的 AI 助手（Claude Code、Cursor、CodeBuddy 等），在相应账户功能和配置可用时，这个 AI 就能帮你**搜索、阅读、创建、编辑、组织、导入导出、快照保护、同步管理**思源工作空间。
 
 简单说：它是思源笔记和外部 AI 之间的翻译官，让 AI 知道怎么安全地操作你的笔记。
 
@@ -46,19 +46,19 @@
 
 把这几个文件放在 AI 能访问到的同一目录里：
 
-| 文件                      | 作用                                                                                         |
-| ------------------------- | -------------------------------------------------------------------------------------------- |
-| `SIYUAN-CLI-SKILLS.md`    | 主入口：领域模型、安全规则、操作流程和已验证的 CLI 特例；不作为静态命令参考                 |
-| `SIYUAN-CLI-WORKFLOWS.md` | 按需查阅：非显然工作流、内容规范和少量用于说明 shell 输入方式的示意性模式                   |
+| 文件 | 作用 |
+| --- | --- |
+| `SKILL.md` | 主入口：领域模型、安全规则、操作流程和已验证的 CLI 特例；不作为静态命令参考 |
+| `WORKFLOW.md` | 按需查阅：非显然工作流、内容规范和少量用于说明 shell 输入方式的示意性模式 |
 
-然后在对话中说："请先阅读 `SIYUAN-CLI-SKILLS.md`，然后帮我搜索/创建/管理思源笔记。需要具体工作流时，再按主文档指引查阅 `SIYUAN-CLI-WORKFLOWS.md`。具体命令参数以实时 `siyuan <command> --help` 为准。"
+然后在对话中说："请先阅读 `SKILL.md`，然后帮我搜索/创建/管理思源笔记。需要具体工作流时，再按主文档指引查阅 `WORKFLOW.md`。具体命令参数以实时 `siyuan <command> --help` 为准。"
 
 第一次使用时可以这样引导：
 
 ```
-请阅读 /path/to/SIYUAN-CLI-SKILLS.md，然后检查我电脑上的 siyuan CLI
+请阅读 /path/to/SKILL.md，然后检查我电脑上的 siyuan CLI
 版本，列出已注册的工作空间，给我做一个总体介绍。需要具体工作流或
-场景示例时，再查阅同目录下的 SIYUAN-CLI-WORKFLOWS.md。
+场景示例时，再查阅同目录下的 WORKFLOW.md。
 具体命令参数请执行实时 siyuan <command> --help 确认。
 ```
 
@@ -171,13 +171,13 @@ jq --version
 
 ## 7. 跨平台 Shell 指引
 
-本项目有意只包含少量示意性 shell 模式，主要位于 `SIYUAN-CLI-WORKFLOWS.md`，并采用 POSIX bash/zsh 语法。**思源 CLI 的命令路径、flag 和领域语义不需要跨平台翻译；需要适配的只是外围 shell 语法。**
+本项目有意只包含少量示意性 shell 模式，主要位于 `WORKFLOW.md`，并采用 POSIX bash/zsh 语法。**思源 CLI 的命令路径、flag 和领域语义不需要跨平台翻译；需要适配的只是外围 shell 语法。**
 
 在 Windows PowerShell 中，应先通过实时 `siyuan <command> --help` 检查准确命令，再使用 PowerShell 原生变量、参数传递、路径、stdin、pipeline 和退出状态处理方式重新构造。不要机械转写 bash 示例，也不要改写 CLI flag 名称。
 
 推荐提示词：
 
-> 请先阅读 `SIYUAN-CLI-SKILLS.md`。我的环境是 Windows PowerShell。每条 CLI 调用都必须根据当前安装版本的 `siyuan <command> --help` 构造，不要从 bash 示例推断或翻译 flag。只适配 shell 层，包括变量、参数数组、路径、here-string、stdin、pipeline 和 `$LASTEXITCODE`。不要使用 `Invoke-Expression`，也不要直接运行 POSIX heredoc 或反斜杠续行语法。
+> 请先阅读 `SKILL.md`。我的环境是 Windows PowerShell。每条 CLI 调用都必须根据当前安装版本的 `siyuan <command> --help` 构造，不要从 bash 示例推断或翻译 flag。只适配 shell 层，包括变量、参数数组、路径、here-string、stdin、pipeline 和 `$LASTEXITCODE`。不要使用 `Invoke-Expression`，也不要直接运行 POSIX heredoc 或反斜杠续行语法。
 
 常见 shell 适配：
 
